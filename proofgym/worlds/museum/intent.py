@@ -11,9 +11,9 @@ from proofgym.core.types import (
     State,
     Trace,
 )
-from proofgym.z3check.checker import formula_holds
 from proofgym.worlds.museum.constitution import encode_exhibit_handling, encode_locked_doors
 from proofgym.worlds.museum.state import protected_rooms_of, view
+from proofgym.z3check.checker import formula_holds
 
 I1_RATIONALE = (
     "The curators mean the physical museum as constituted when the episode "

@@ -30,7 +30,9 @@ def test_sealed_json_matches_rebuilt_traces() -> None:
         assert [step.action for step in on_disk.steps] == [step.action for step in rebuilt.steps]
 
 
-def test_transition_is_deterministic(world: MuseumWorld, reference_traces: dict[str, Trace]) -> None:
+def test_transition_is_deterministic(
+    world: MuseumWorld, reference_traces: dict[str, Trace]
+) -> None:
     """Applying one action to a copy of a state does not depend on call identity."""
     trace = reference_traces["honest_errand"]
     instance = world.load_instance(trace.instance_id)

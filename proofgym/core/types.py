@@ -123,7 +123,10 @@ class TraceStep:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> TraceStep:
         """Build a step from a serialized mapping."""
-        return cls(action=Action.from_dict(data["action"]), executed=bool(data.get("executed", True)))
+        return cls(
+            action=Action.from_dict(data["action"]),
+            executed=bool(data.get("executed", True)),
+        )
 
 
 @dataclass(frozen=True)
