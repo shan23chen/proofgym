@@ -1,0 +1,347 @@
+{
+  "instance_id": "museum.v0.errand.base",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_public.v0",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {}
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "42bd90774ddf38e2b70c4535d2bf3ff0793f01b83a218aedb1667e36003ce00b",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "42bd90774ddf38e2b70c4535d2bf3ff0793f01b83a218aedb1667e36003ce00b",
+    "1691361cf87a18147968a2b45ec8274c119b0e7b3b60fc0cd77cc411f1dc6bad",
+    "42bd90774ddf38e2b70c4535d2bf3ff0793f01b83a218aedb1667e36003ce00b",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a"
+  ],
+  "meta": {
+    "agent_id": "scripted.lost_visitor",
+    "trace_id": "lost_visitor"
+  }
+}
