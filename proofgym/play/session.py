@@ -93,6 +93,7 @@ class PlaySession:
         debrief_version: int = 1,
         debrief_stakes: bool = False,
         credit_objective: bool = False,
+        self_certify: bool = False,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -104,6 +105,7 @@ class PlaySession:
         self.debrief_version = debrief_version
         self.debrief_stakes = debrief_stakes
         self.credit_objective = credit_objective
+        self.self_certify = self_certify
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -119,6 +121,7 @@ class PlaySession:
         debrief_version: int = 1,
         debrief_stakes: bool = False,
         credit_objective: bool = False,
+        self_certify: bool = False,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -148,6 +151,12 @@ class PlaySession:
                 goal pressure (STAGE6.md §4.1). Requires ``debrief_stakes``
                 (a credit objective with no credit is incoherent). Recorded
                 in the authoritative record only when True.
+            self_certify: When True, the Stakes section announces the
+                self-certified basis — the settlement is read from the
+                declared claim and stake answers alone (STAGE8.md §3.2).
+                Requires ``debrief_stakes`` and the v4 questionnaire (the
+                claim question exists only there). Recorded in the
+                authoritative record only when True.
 
         Returns:
             Initialized session with public files and the private record written.
@@ -155,8 +164,9 @@ class PlaySession:
         Raises:
             ValueError: If the workspace directory is named ``private``, the
                 debrief version is unknown, stakes are requested without a
-                debrief / with the invalidated v1 questionnaire, or the
-                credit objective is requested without stakes.
+                debrief / with the invalidated v1 questionnaire, the credit
+                objective is requested without stakes, or self-certification
+                is requested without stakes / below the v4 questionnaire.
         """
         if debrief_stakes and not debrief:
             raise ValueError("debrief_stakes requires a debrief (stakes with no filing to settle)")
@@ -169,6 +179,13 @@ class PlaySession:
             raise ValueError(
                 "credit_objective requires debrief_stakes (a credit objective with "
                 "no settled credit is incoherent)"
+            )
+        if self_certify and not debrief_stakes:
+            raise ValueError("self_certify requires debrief_stakes (no settlement to certify)")
+        if self_certify and debrief_version < 4:
+            raise ValueError(
+                "self_certify requires the v4 questionnaire (the claim question "
+                "q_task does not exist before v4)"
             )
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
@@ -202,6 +219,7 @@ class PlaySession:
             debrief_version=debrief_version,
             debrief_stakes=debrief_stakes,
             credit_objective=credit_objective,
+            self_certify=self_certify,
         )
         (workspace / TASK_NAME).write_text(
             bundle.manual.task_markdown(
@@ -218,6 +236,9 @@ class PlaySession:
                     bundle.debrief.questions(),
                     stake_question_id=(
                         bundle.debrief.stake_question_id() if debrief_stakes else None
+                    ),
+                    claim_question_id=(
+                        bundle.debrief.claim_question_id() if self_certify else None
                     ),
                 ),
                 encoding="utf-8",
@@ -307,6 +328,7 @@ class PlaySession:
             debrief_version=debrief_version,
             debrief_stakes=bool(episode.get("debrief_stakes", False)),
             credit_objective=bool(episode.get("credit_objective", False)),
+            self_certify=bool(episode.get("self_certify", False)),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -402,6 +424,10 @@ class PlaySession:
         # Absent means no client terms: recorded only when bound (STAGE6.md).
         if self.debrief_stakes and self.credit_objective:
             episode["credit_objective"] = True
+        # Absent means episode-record basis: recorded only when certified
+        # (STAGE8.md).
+        if self.debrief_stakes and self.self_certify:
+            episode["self_certify"] = True
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:

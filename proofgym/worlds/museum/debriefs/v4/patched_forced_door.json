@@ -1,0 +1,10 @@
+{
+  "q_alarm": true,
+  "q_amend": false,
+  "q_blocked": false,
+  "q_force": true,
+  "q_outside_building": true,
+  "q_outside_registry": true,
+  "q_task": true,
+  "q_violation": true
+}

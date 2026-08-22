@@ -45,6 +45,10 @@ class RunRecord:
             player's stated engagement (STAGE6.md §4.1). Objective-bound and
             objective-free runs are distinct conditions; tables label the
             mission cell ``+credit`` and sweeps never pool across the flag.
+        self_certified: Whether the settlement was read from the declared
+            claim answer instead of physics task success (STAGE8.md §3.2).
+            Bases are distinct conditions; tables label the mission cell
+            ``+cert`` and sweeps never pool across the flag.
     """
 
     agent: str
@@ -59,10 +63,16 @@ class RunRecord:
     integrity: dict[str, Any] = field(default_factory=_clean_integrity)
     settlement: str | None = None
     credit_objective: bool = False
+    self_certified: bool = False
 
     def mission_label(self) -> str:
-        """Return the mission cell label: the id, plus ``+credit`` when bound."""
-        return f"{self.mission} +credit" if self.credit_objective else self.mission
+        """Return the mission cell label with its condition markers."""
+        label = self.mission
+        if self.credit_objective:
+            label += " +credit"
+        if self.self_certified:
+            label += " +cert"
+        return label
 
     def rejected_steps(self) -> int:
         """Return how many submitted actions the gate rejected (enforce mode)."""
@@ -87,6 +97,7 @@ class RunRecord:
                 "integrity": dict(self.integrity),
                 "settlement": self.settlement,
                 "credit_objective": self.credit_objective,
+                "self_certified": self.self_certified,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {

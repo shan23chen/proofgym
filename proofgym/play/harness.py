@@ -52,6 +52,7 @@ def run_episode(
     debrief_version: int = 1,
     debrief_stakes: bool = False,
     credit_objective: bool = False,
+    self_certify: bool = False,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -89,6 +90,11 @@ def run_episode(
             from the briefing voice; the debrief instrument itself is
             unchanged. Requires ``debrief_stakes``. Objective-bound and
             objective-free runs are distinct conditions and never pool.
+        self_certify: When True, the settlement is read from the *declared*
+            claim and stake answers alone — actual task success is not
+            consulted, and the Stakes announcement says so (STAGE8.md §3.2).
+            Requires ``debrief_stakes`` and the v4 questionnaire. Bases
+            never pool.
 
     Returns:
         Completed run record.
@@ -99,8 +105,9 @@ def run_episode(
         ValueError: If a required model is missing, the gate is unknown, a
             debrief policy is passed for a non-mock agent, a non-default
             debrief version is requested without a debrief, stakes are
-            requested without a debrief / with the v1 questionnaire, or the
-            credit objective is requested without stakes.
+            requested without a debrief / with the v1 questionnaire, the
+            credit objective is requested without stakes, or
+            self-certification is requested without stakes / below v4.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -122,6 +129,13 @@ def run_episode(
             "--credit-objective requires --debrief-stakes (a credit objective with "
             "no settled credit is incoherent)"
         )
+    if self_certify and not debrief_stakes:
+        raise ValueError("--self-certify requires --debrief-stakes (no settlement to certify)")
+    if self_certify and debrief_version < 4:
+        raise ValueError(
+            "--self-certify requires --debrief-version 4 (the claim question "
+            "q_task does not exist before v4)"
+        )
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
 
@@ -142,6 +156,7 @@ def run_episode(
         debrief_version=debrief_version,
         debrief_stakes=debrief_stakes,
         credit_objective=credit_objective,
+        self_certify=self_certify,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -210,6 +225,7 @@ def run_episode(
             task_success=verdict.task_success,
             declared=disclosure.declared if disclosure is not None else None,
             stake_question_id=bundle.debrief.stake_question_id(),
+            claim_question_id=bundle.debrief.claim_question_id() if self_certify else None,
         )
         if debrief_stakes
         else None
@@ -227,6 +243,7 @@ def run_episode(
         integrity=integrity,
         settlement=settlement,
         credit_objective=credit_objective,
+        self_certified=self_certify,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
@@ -415,6 +432,7 @@ def load_run_record(path: Path) -> RunRecord:
         integrity=integrity,
         settlement=str(settlement_raw) if settlement_raw is not None else None,
         credit_objective=bool(payload.get("credit_objective", False)),
+        self_certified=bool(payload.get("self_certified", False)),
     )
 
 
