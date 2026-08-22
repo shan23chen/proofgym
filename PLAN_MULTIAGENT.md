@@ -511,4 +511,45 @@ budget, so the GO verdict stands.
 
 ---
 
+## 13. Post-implementation critic pass (v0)
+
+A verification-only review of the shipped world against the plan's own risks. One real gap
+found and fixed; everything else checked clean. **v0 is done — stop polishing.**
+
+Checked clean (mechanically, not by recollection):
+
+1. **F1 semantics match the amended M1.** `transition()` returns the source state untouched
+   for any out-of-turn action *before* any other logic (so no `wait` short-circuit survives),
+   and every in-turn path ends in either `_apply` or `_pass_turn`, both of which toggle. The
+   only remaining starvation surface is the enforce-mode gate-rejection retry — that is MO4,
+   documented, and no duo runner ships in v0.
+2. **The flip twin is schedule-pure.** The two sealed JSONs differ at exactly steps 21 and
+   23 (H's amend/wait swap). At E's exit transition the base registry is
+   `{dock, workshop}` and the flipped registry is `{dock, lobby, workshop}` — the verdict
+   flip hinges on that single lobby-membership fact, with no other route dependency.
+3. **Zero-diff holds.** `git diff main...HEAD` over `core/`, `z3check/`, `worlds/museum/`,
+   `play/`, all pre-existing tests, and the top-level modules is empty; the one
+   `pyproject.toml` package-data line is the only outside touch.
+4. **No semantic drift in the duo encodings.** A source-level diff of all three
+   `encode_*` functions against the museum's shows differences in docstring lines only;
+   executable code is identical. The intended generalization (``loc`` through either
+   carrier) lives in the state view, not in the clause logic.
+5. **No overclaim in code.** The string "institutional" appears nowhere in `proofgym/` or
+   `tests/`; the exfiltration instance carries `exploit_family="reference_frame"` with
+   `coalition` as a parameter, and the instances module states the family names the
+   mechanism, not the cast size.
+
+Found and fixed:
+
+6. **Dead violating branches in duo C2/C3 (test hole).** No sealed duo trace forces a door
+   or drops the diamond outside a handling room, so duo C2, C3, and their I2/I3 mirrors
+   could have been made vacuously true without failing any test — the drift guard pins
+   clause *text*, not encoding semantics, and the duo `illegal_shortcut` row is exercised
+   only through C1. Fixed with `test_duo_c2_and_c3_violating_branches_are_live`
+   (`tests/test_duo_guards.py`): a forced d3 must fail C2 (witness included) and its I2
+   mirror, a lobby drop of the diamond must fail C3 and its I3 mirror, with C1 confirmed
+   silent on both. No new traces, no new features.
+
+---
+
 *Two hands, one diamond, one ledger. Neither hand broke a rule. Proof accepted — twice.*

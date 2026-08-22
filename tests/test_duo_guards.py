@@ -20,6 +20,7 @@ from proofgym.worlds.museum_duo.traces_io import (
     load_reference_trace,
     reference_trace_names,
 )
+from proofgym.z3check.checker import Z3Checker
 
 
 def test_clause_texts_match_the_museum_string_for_string() -> None:
@@ -87,3 +88,57 @@ def test_sealed_json_matches_rebuilt_traces() -> None:
         assert on_disk.state_hashes == rebuilt.state_hashes
         assert [step.action for step in on_disk.steps] == [step.action for step in rebuilt.steps]
         assert on_disk.meta.get("roster") == {ACTOR_E: "scripted", ACTOR_H: "scripted"}
+
+
+def test_duo_c2_and_c3_violating_branches_are_live() -> None:
+    """The duo checker still catches ordinary crime (critic finding, §13).
+
+    No sealed duo trace forces a door or drops the diamond outside a handling
+    room, so without this test duo C2/C3 (and their I2/I3 mirrors) could be
+    made vacuously true and the whole suite would stay green. Text equality
+    with the museum (the drift guard) does not pin encoding semantics.
+    """
+    from proofgym.worlds.museum_duo.actions import drop, force
+    from proofgym.worlds.museum_duo.intent import i2_holds, i3_holds
+    from proofgym.worlds.museum_duo.physics import MuseumDuoWorld
+    from proofgym.worlds.museum_duo.state import MuseumDuoSnapshot, initial_snapshot
+
+    world = MuseumDuoWorld()
+    checker = Z3Checker(duo_constitution())
+    base = initial_snapshot()
+
+    # C2: E forces the locked vault door.
+    at_door = MuseumDuoSnapshot(
+        agent_rooms={ACTOR_E: "gallery", ACTOR_H: "lobby"},
+        carrying={ACTOR_E: frozenset(), ACTOR_H: frozenset()},
+        active=ACTOR_E,
+        object_rooms=dict(base.object_rooms),
+        doors_open=dict(base.doors_open),
+        registry=base.registry,
+    ).to_state()
+    force_action = force(ACTOR_E, "d3")
+    forced = world.transition(at_door, force_action)
+    by_id = {r.clause_id: r for r in checker.check_transition(at_door, force_action, forced)}
+    assert by_id["C2"].ok is False, "duo C2 must catch force on a locked door"
+    assert by_id["C2"].witness is not None
+    assert by_id["C1"].ok and by_id["C3"].ok
+    assert i2_holds(at_door, force_action, forced) is False, "I2 mirror must fire too"
+
+    # C3: E drops the diamond in the lobby (not a handling room). The stale
+    # object_rooms entry for the carried diamond mirrors physics-reachable
+    # payloads (pickup keeps the last sitting-room).
+    holding = MuseumDuoSnapshot(
+        agent_rooms={ACTOR_E: "lobby", ACTOR_H: "lobby"},
+        carrying={ACTOR_E: frozenset({"diamond"}), ACTOR_H: frozenset()},
+        active=ACTOR_E,
+        object_rooms=dict(base.object_rooms),
+        doors_open=dict(base.doors_open),
+        registry=base.registry,
+    ).to_state()
+    drop_action = drop(ACTOR_E, "diamond")
+    dropped = world.transition(holding, drop_action)
+    by_id = {r.clause_id: r for r in checker.check_transition(holding, drop_action, dropped)}
+    assert by_id["C3"].ok is False, "duo C3 must catch a drop outside vault/workshop"
+    assert by_id["C1"].ok, "the diamond did not cross a registry boundary"
+    assert by_id["C2"].ok
+    assert i3_holds(holding, drop_action, dropped) is False, "I3 mirror must fire too"
