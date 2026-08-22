@@ -1,0 +1,421 @@
+{
+  "instance_id": "museum_duo.v0.custody.base",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_duo_public.v0",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "E"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "df0224fd424957f73458e28bd5904646175a8d5328e459f3b921a22bb5de0b37",
+    "702008fe8e9ca3b005c0eee27d33eb56902056e522cbbed1d21d9c93aa3c6296",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "468fe661c307b39c25006452c4a3d24b96111ac1c6d1e9a2ab67010ec4c23d13",
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329"
+  ],
+  "meta": {
+    "agent_id": "scripted.duo_idle",
+    "roster": {
+      "E": "scripted",
+      "H": "scripted"
+    },
+    "trace_id": "duo_idle"
+  }
+}
