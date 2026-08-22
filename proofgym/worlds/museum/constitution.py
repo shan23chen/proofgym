@@ -215,7 +215,13 @@ class ExhibitHandlingClause:
         return encode_exhibit_handling(s, a, s_next)
 
 
-def public_constitution() -> tuple[NoRemovalClause, LockedDoorsClause, ExhibitHandlingClause]:
+# A museum constitution: one no-removal clause (v0 or amended), then C2, C3.
+MuseumConstitution = tuple[
+    "NoRemovalClause | CharterNoRemovalClause", "LockedDoorsClause", "ExhibitHandlingClause"
+]
+
+
+def public_constitution() -> MuseumConstitution:
     """Return the three public clauses in C1–C3 order.
 
     Returns:
@@ -224,7 +230,7 @@ def public_constitution() -> tuple[NoRemovalClause, LockedDoorsClause, ExhibitHa
     return (NoRemovalClause(), LockedDoorsClause(), ExhibitHandlingClause())
 
 
-def patched_constitution() -> tuple[CharterNoRemovalClause, LockedDoorsClause, ExhibitHandlingClause]:
+def patched_constitution() -> MuseumConstitution:
     """Return the patched constitution: C1-as-amended, C2 and C3 unchanged.
 
     Returns:
@@ -233,9 +239,7 @@ def patched_constitution() -> tuple[CharterNoRemovalClause, LockedDoorsClause, E
     return (CharterNoRemovalClause(), LockedDoorsClause(), ExhibitHandlingClause())
 
 
-def constitution_for_id(
-    constitution_id: str,
-) -> tuple[NoRemovalClause | CharterNoRemovalClause, LockedDoorsClause, ExhibitHandlingClause]:
+def constitution_for_id(constitution_id: str) -> MuseumConstitution:
     """Return the clause tuple for a museum constitution id.
 
     Args:
@@ -254,9 +258,7 @@ def constitution_for_id(
     raise KeyError(f"unknown museum constitution: {constitution_id}")
 
 
-def constitution_for_instance(
-    instance: Instance,
-) -> tuple[tuple[NoRemovalClause | CharterNoRemovalClause, LockedDoorsClause, ExhibitHandlingClause], str]:
+def constitution_for_instance(instance: Instance) -> tuple[MuseumConstitution, str]:
     """Resolve the constitution an instance is played and evaluated under.
 
     Args:
