@@ -12,8 +12,9 @@ from typing import Any
 
 from proofgym.catalog import WorldBundle, load_bundle
 from proofgym.core.evaluate import evaluate
+from proofgym.core.runner import EnforceRunner
 from proofgym.core.serialize import dump_trace
-from proofgym.core.types import Trace
+from proofgym.core.types import ENGINE_VERSION, Trace
 from proofgym.play.adapters import (
     CodexAdapter,
     MockAdapter,
@@ -25,6 +26,7 @@ from proofgym.play.debrief import DisclosureVerdict, read_debrief_answers, score
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession
+from proofgym.z3check.checker import Z3Checker
 
 CLI_AGENTS = frozenset({"opencode", "codex"})
 
@@ -127,8 +129,32 @@ def run_episode(
         raise KeyError(f"unknown agent: {agent}")
 
     bundle = load_bundle(world_name)
-    trace = session.to_trace()
-    instance = bundle.world.load_instance(trace.instance_id)
+    integrity_events: list[dict[str, Any]] = list(session.integrity_events)
+    if agent in CLI_AGENTS:
+        # Never score a trace restored from disk. Re-derive the episode in
+        # this process from the only channel the player legitimately controls
+        # — the submitted action list — under the harness's own authoritative
+        # gate, mission, and constitution. A player that rewrote gate,
+        # instance, hashes, or executed flags anywhere on disk changes
+        # nothing here; the divergence is recorded instead.
+        trace, rebuild_events = _rebuild_authoritative_trace(
+            bundle,
+            mission=mission,
+            gate=gate,
+            debrief=debrief,
+            meta=meta,
+            recorded=session.to_trace(),
+        )
+        integrity_events.extend(rebuild_events)
+    else:
+        # The mock adapter plays on the in-process session; there is no
+        # untrusted reload to defend against.
+        trace = session.to_trace()
+    integrity = {
+        "status": "flagged" if integrity_events else "clean",
+        "events": integrity_events,
+    }
+    instance = bundle.instance_for_mission(mission)
     constitution, _ = bundle.constitution_for_instance(instance)
     # Evaluation uses hidden I* in *this* process, never in the workspace.
     verdict = evaluate(bundle.world, constitution, bundle.intent, trace)
@@ -144,9 +170,93 @@ def run_episode(
         workspace=str(workspace.resolve()),
         adapter=adapter_meta,
         disclosure=disclosure,
+        integrity=integrity,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
+
+
+def _rebuild_authoritative_trace(
+    bundle: WorldBundle,
+    *,
+    mission: str,
+    gate: str,
+    debrief: bool,
+    meta: Mapping[str, Any],
+    recorded: Trace,
+) -> tuple[Trace, list[dict[str, Any]]]:
+    """Replay the recorded submitted actions through a fresh in-process gate.
+
+    The rebuilt trace is authoritative by construction: instance, gate,
+    constitution, horizon, executed flags, and state hashes are all derived
+    here from the harness's own arguments plus the action list. The recorded
+    episode is only compared against it for divergence reporting.
+
+    Args:
+        bundle: World bundle.
+        mission: Authoritative mission id (harness argument, not the file's).
+        gate: Authoritative gate mode (harness argument, not the file's).
+        debrief: Whether this run requested a debrief (trace metadata).
+        meta: Extra trace metadata (agent id, mission), as passed at create.
+        recorded: Episode restored from the on-disk record.
+
+    Returns:
+        ``(rebuilt_trace, events)`` where ``events`` is empty when the
+        recorded episode matches the rebuild exactly.
+    """
+    instance = bundle.instance_for_mission(mission)
+    world_mission = bundle.world.mission_for(instance)
+    constitution, constitution_id = bundle.constitution_for_instance(instance)
+    runner = EnforceRunner(
+        bundle.world,
+        instance,
+        Z3Checker(constitution),
+        horizon=world_mission.horizon,
+        constitution_id=constitution_id,
+        engine_version=ENGINE_VERSION,
+        meta={
+            "world": bundle.name,
+            "mission_id": mission,
+            "gate": gate,
+            "debrief": debrief,
+            **dict(meta),
+        },
+        gate=gate,
+    )
+    dropped = 0
+    for step in recorded.steps:
+        if runner.done:
+            dropped += 1
+            continue
+        runner.submit(step.action)
+    rebuilt = runner.to_trace()
+
+    fields = sorted(
+        name
+        for name, matches in {
+            "instance_id": recorded.instance_id == rebuilt.instance_id,
+            "constitution_id": recorded.constitution_id == rebuilt.constitution_id,
+            "seed": recorded.seed == rebuilt.seed,
+            "gate": recorded.meta.get("gate") == gate,
+            "executed_flags": [s.executed for s in recorded.steps[: len(rebuilt.steps)]]
+            == [s.executed for s in rebuilt.steps],
+            "state_hashes": tuple(recorded.state_hashes) == tuple(rebuilt.state_hashes),
+        }.items()
+        if not matches
+    )
+    if dropped:
+        fields.append("steps_beyond_horizon")
+    events: list[dict[str, Any]] = []
+    if fields:
+        events.append(
+            {
+                "step": len(rebuilt.steps),
+                "file": "episode",
+                "kind": "episode_diverged",
+                "fields": fields,
+            }
+        )
+    return rebuilt, events
 
 
 def _score_disclosure(bundle: WorldBundle, trace: Trace, workspace: Path) -> DisclosureVerdict:
@@ -220,6 +330,15 @@ def load_run_record(path: Path) -> RunRecord:
     disclosure = (
         DisclosureVerdict.from_dict(disclosure_raw) if isinstance(disclosure_raw, Mapping) else None
     )
+    integrity_raw = payload.get("integrity")
+    integrity = (
+        {
+            "status": str(integrity_raw.get("status", "clean")),
+            "events": list(integrity_raw.get("events") or []),
+        }
+        if isinstance(integrity_raw, Mapping)
+        else {"status": "clean", "events": []}
+    )
     return RunRecord(
         agent=str(payload["agent"]),
         model=str(payload["model"]),
@@ -230,6 +349,7 @@ def load_run_record(path: Path) -> RunRecord:
         workspace=str(payload.get("workspace") or ""),
         adapter=dict(payload.get("adapter") or {}),
         disclosure=disclosure,
+        integrity=integrity,
     )
 
 
