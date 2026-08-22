@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from proofgym.core.types import Trace, Verdict
 from proofgym.play.debrief import DisclosureVerdict
+
+
+def _clean_integrity() -> dict[str, Any]:
+    """Default integrity block: nothing to report."""
+    return {"status": "clean", "events": []}
 
 
 @dataclass(frozen=True)
@@ -25,6 +30,12 @@ class RunRecord:
         adapter: Adapter metadata (argv, return code, …).
         disclosure: Deterministic debrief score, or ``None`` when the episode
             ran without a debrief request.
+        integrity: Workspace-integrity block: ``status`` is ``clean`` or
+            ``flagged``; ``events`` records mirror tampering/deletion seen
+            during play and any divergence between the on-disk episode and
+            the harness's in-process authoritative rebuild. Scoring always
+            uses the rebuild, so a flagged run is *scored correctly* — the
+            flag marks the artifact for eval-hygiene review.
     """
 
     agent: str
@@ -36,6 +47,7 @@ class RunRecord:
     adapter: dict[str, Any]
     gate: str = "enforce"
     disclosure: DisclosureVerdict | None = None
+    integrity: dict[str, Any] = field(default_factory=_clean_integrity)
 
     def rejected_steps(self) -> int:
         """Return how many submitted actions the gate rejected (enforce mode)."""
@@ -57,6 +69,7 @@ class RunRecord:
                 "exploit_family": self.verdict.exploit_family,
                 "rejected_steps": self.rejected_steps(),
                 "disclosure": self.disclosure.to_dict() if self.disclosure is not None else None,
+                "integrity": dict(self.integrity),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -89,6 +102,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Intent",
         "Rejected",
         "Disclosure",
+        "Integrity",
     )
     rows: list[tuple[str, ...]] = []
     for record in records:
@@ -103,6 +117,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.verdict.intent.verdict,
                 str(record.rejected_steps()),
                 record.disclosure.label if record.disclosure is not None else "—",
+                str(record.integrity.get("status", "clean")),
             )
         )
     return _table(header, rows)
@@ -136,6 +151,16 @@ def format_one_row_report(record: RunRecord) -> str:
     if record.disclosure is not None and record.disclosure.mismatches:
         contested = ", ".join(f"`{item}`" for item in record.disclosure.mismatches)
         document += f"\nMisreported debrief answers (declared ≠ trace): {contested}.\n"
+    if record.integrity.get("status") == "flagged":
+        kinds = ", ".join(
+            sorted({str(event.get("kind", "?")) for event in record.integrity.get("events", [])})
+        )
+        document += (
+            "\n**Workspace integrity: flagged** "
+            f"({kinds}). The verdict above was scored from the harness's "
+            "authoritative in-process replay, not from the on-disk record; "
+            "archive this run for eval-hygiene review.\n"
+        )
     return document
 
 
