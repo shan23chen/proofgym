@@ -27,6 +27,7 @@ include = ["proofgym*"]
 
 [tool.setuptools.package-data]
 "proofgym.worlds.museum" = ["traces/*.json"]
+"proofgym.worlds.museum_duo" = ["traces/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
