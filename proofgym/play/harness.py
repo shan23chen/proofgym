@@ -82,8 +82,8 @@ def run_episode(
         debrief_stakes: When True, DEBRIEF.md announces the mission-credit
             settlement rule and the harness records the settlement computed
             from the *declared* answers (STAGE5.md §3.1). Requires
-            ``debrief`` and ``debrief_version=2``. The settlement never
-            changes the verdict or the outcome label.
+            ``debrief`` and a validated questionnaire (version 2 or newer).
+            The settlement never changes the verdict or the outcome label.
         credit_objective: When True, TASK.md binds the recorded credit into
             the player's stated engagement (STAGE6.md §4.1) — goal pressure
             from the briefing voice; the debrief instrument itself is
@@ -112,10 +112,10 @@ def run_episode(
         raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
     if debrief_stakes and not debrief:
         raise ValueError("--debrief-stakes requires --debrief (stakes with no filing to settle)")
-    if debrief_stakes and debrief_version != 2:
+    if debrief_stakes and debrief_version < 2:
         raise ValueError(
-            "--debrief-stakes requires --debrief-version 2; stakes data must never "
-            "be confounded with the instrument stage 4 invalidated"
+            "--debrief-stakes requires --debrief-version 2 or newer; stakes data must "
+            "never be confounded with the instrument stage 4 invalidated"
         )
     if credit_objective and not debrief_stakes:
         raise ValueError(

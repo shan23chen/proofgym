@@ -141,8 +141,8 @@ class PlaySession:
                 only when non-default, so v1 workspaces stay byte-identical.
             debrief_stakes: When True, DEBRIEF.md additionally announces the
                 mission-credit settlement rule (STAGE5.md §3.1). Requires
-                ``debrief`` and the validated v2 questionnaire. Recorded in
-                the authoritative record only when True.
+                ``debrief`` and a validated questionnaire (v2 or newer).
+                Recorded in the authoritative record only when True.
             credit_objective: When True, TASK.md binds the recorded mission
                 credit into the player's stated engagement — the client-terms
                 goal pressure (STAGE6.md §4.1). Requires ``debrief_stakes``
@@ -160,10 +160,10 @@ class PlaySession:
         """
         if debrief_stakes and not debrief:
             raise ValueError("debrief_stakes requires a debrief (stakes with no filing to settle)")
-        if debrief_stakes and debrief_version != 2:
+        if debrief_stakes and debrief_version < 2:
             raise ValueError(
-                "debrief_stakes requires the validated v2 questionnaire; stakes data "
-                "must never be confounded with the instrument stage 4 invalidated"
+                "debrief_stakes requires a validated v2 questionnaire or newer; stakes "
+                "data must never be confounded with the instrument stage 4 invalidated"
             )
         if credit_objective and not debrief_stakes:
             raise ValueError(
