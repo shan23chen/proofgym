@@ -1,4 +1,4 @@
-"""Persisted enforce-mode episode in an isolated player workspace."""
+"""Persisted gated episode in an isolated player workspace."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from proofgym.catalog import WorldBundle, load_bundle
-from proofgym.core.runner import EnforceRunner
+from proofgym.core.runner import GATE_ENFORCE, EnforceRunner
 from proofgym.core.types import ENGINE_VERSION, Action, GateFeedback, Trace, TraceStep
 from proofgym.z3check.checker import Z3Checker
 
@@ -20,11 +20,13 @@ NEXT_ACTION_NAME = "next_action.json"
 
 
 class PlaySession:
-    """One enforce-mode episode backed by a player-visible workspace.
+    """One gated episode backed by a player-visible workspace.
 
-    The workspace contains only public files: TASK.md, state.json, episode
-    bookkeeping, and log.jsonl. Hidden intent, gold traces, PLAN.md, and
-    CRITIQUE.md are never written here.
+    The gate is ``enforce`` by default; ``permissive`` executes illegal
+    actions while reporting the violation (see ``core.runner``). The workspace
+    contains only public files: TASK.md, state.json, episode bookkeeping, and
+    log.jsonl. Hidden intent, gold traces, PLAN.md, and CRITIQUE.md are never
+    written here.
     """
 
     def __init__(
@@ -48,14 +50,18 @@ class PlaySession:
         world_name: str,
         mission_id: str,
         meta: Mapping[str, Any] | None = None,
+        gate: str = GATE_ENFORCE,
     ) -> PlaySession:
         """Create a fresh workspace and runner for ``mission_id``.
 
         Args:
             workspace: Empty directory that will hold public player files.
             world_name: Catalog world (pilot: ``museum``).
-            mission_id: Mission id (``errand`` or ``heist``).
+            mission_id: Mission id (``errand``, ``heist``, ``heist_patched``).
             meta: Extra trace metadata (agent id, model, …).
+            gate: ``enforce`` (default) or ``permissive``. Recorded in the
+                episode and in trace metadata; results are not comparable
+                across gate modes.
 
         Returns:
             Initialized session with TASK.md / state.json / episode.json written.
@@ -64,18 +70,21 @@ class PlaySession:
         bundle = load_bundle(world_name)
         instance = bundle.instance_for_mission(mission_id)
         mission = bundle.world.mission_for(instance)
+        constitution, constitution_id = bundle.constitution_for_instance(instance)
         runner = EnforceRunner(
             bundle.world,
             instance,
-            Z3Checker(bundle.constitution),
+            Z3Checker(constitution),
             horizon=mission.horizon,
-            constitution_id=bundle.constitution_id,
+            constitution_id=constitution_id,
             engine_version=ENGINE_VERSION,
             meta={
                 "world": bundle.name,
                 "mission_id": mission_id,
+                "gate": gate,
                 **dict(meta or {}),
             },
+            gate=gate,
         )
         session = cls(workspace, bundle, runner)
         (workspace / TASK_NAME).write_text(
@@ -104,14 +113,16 @@ class PlaySession:
         bundle = load_bundle(str(episode["world"]))
         instance = bundle.world.load_instance(str(episode["instance_id"]))
         mission = bundle.world.mission_for(instance)
+        constitution, _ = bundle.constitution_for_instance(instance)
         runner = EnforceRunner(
             bundle.world,
             instance,
-            Z3Checker(bundle.constitution),
+            Z3Checker(constitution),
             horizon=int(episode["horizon"]),
             constitution_id=str(episode["constitution_id"]),
             engine_version=str(episode.get("engine_version", ENGINE_VERSION)),
             meta=dict(episode.get("meta") or {}),
+            gate=str(episode.get("gate", GATE_ENFORCE)),
         )
         observation = _read_json(workspace / STATE_NAME)
         state = bundle.manual.state_from_observation(observation)
@@ -192,6 +203,7 @@ class PlaySession:
             "seed": self.runner.instance.seed,
             "mission_id": self.runner.instance.mission_id,
             "horizon": self.runner.horizon,
+            "gate": self.runner.gate,
             "step": self.runner.step_index,
             "done": self.runner.done,
             "state_hashes": list(self.runner.state_hashes),

@@ -138,6 +138,46 @@ def test_player_workspace_has_no_intent(tmp_path: Path) -> None:
     assert str(checkout) not in blob
 
 
+def test_patched_workspace_shows_amended_c1_and_leaks_nothing(tmp_path: Path) -> None:
+    """heist_patched TASK.md carries the amended clause text, and only that.
+
+    The patch is public (players are told the charter is frozen), but the
+    clause purpose notes, I*, and gold traces stay out of the workspace.
+    """
+    session = PlaySession.create(
+        tmp_path / "workspace",
+        world_name="museum",
+        mission_id="heist_patched",
+    )
+    task = (session.workspace / "TASK.md").read_text(encoding="utf-8")
+    assert "founding charter" in task
+    # The v0 C1 sentence is a prefix of the amended text, so compare the whole
+    # rendered bullet: the unamended clause line must not appear.
+    assert f"- **C1** — {NoRemovalClause().text}\n" not in task
+    files = [path for path in session.workspace.rglob("*") if path.is_file()]
+    blob = "\n".join(path.read_text(encoding="utf-8") for path in files)
+    for needle in FORBIDDEN_SUBSTRINGS:
+        assert needle not in blob, f"leaked {needle!r}"
+    assert "Close the registry gap" not in blob, "leaked the patched clause purpose note"
+    episode = json.loads((session.workspace / "episode.json").read_text(encoding="utf-8"))
+    assert episode["constitution_id"] == "museum_public.v1_patched"
+    assert episode["gate"] == "enforce"
+
+
+def test_mock_heist_patched_default_is_honest_failure(tmp_path: Path) -> None:
+    """``proofgym run --agent mock --mission heist_patched`` is blocked lawfully."""
+    record = run_episode(
+        agent="mock",
+        mission="heist_patched",
+        out_dir=tmp_path / "out",
+        live_root=tmp_path / "live",
+    )
+    assert record.verdict.outcome == "honest_failure"
+    assert record.verdict.formal.ok is True
+    assert record.verdict.intent.verdict == "legitimate"
+    assert record.rejected_steps() == 1
+
+
 def test_act_cli_move_and_next_action_json(tmp_path: Path) -> None:
     """``python -m proofgym.act`` and ``next_action.json`` both advance the episode."""
     workspace = tmp_path / "workspace"

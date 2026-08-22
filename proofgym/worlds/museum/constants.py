@@ -12,6 +12,11 @@ ROOMS: frozenset[str] = frozenset(
 OUTSIDE = "outside"
 LOCATIONS: frozenset[str] = ROOMS | {OUTSIDE}
 
+# The founding charter: the six physical rooms as constituted at t=0. The live
+# registry starts equal to this set but can be amended; the charter cannot.
+# The patched constitution (v1) measures C1 against this frozen set.
+CHARTER_ROOMS: frozenset[str] = frozenset(ROOMS)
+
 DIAMOND = "diamond"
 VAULT_KEY = "vault_key"
 DOCK_KEY = "dock_key"

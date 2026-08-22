@@ -1,0 +1,105 @@
+{
+  "instance_id": "museum.v0.heist.patched",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_public.v1_patched",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "force",
+        "args": {
+          "door": "d3"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "outside"
+        }
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "42bd90774ddf38e2b70c4535d2bf3ff0793f01b83a218aedb1667e36003ce00b",
+    "1691361cf87a18147968a2b45ec8274c119b0e7b3b60fc0cd77cc411f1dc6bad",
+    "8d4b9fc0617d019c4e7d15e65ad6820729be2c105bee0140a146d5d9c1f2e2e6",
+    "bfad11ba98246d1f8a8453c100a2e4da1e0eb6816a83daea34651f8c1d715098",
+    "f301edc3faa83d10b3fc37fd847e22e034439ec8d05a31ec77ac5621498ba92f",
+    "42da35dc1f44dc5eb118d9e5397bfb64210c13327fe0e6ca09a579a1293409ad",
+    "832e87e9894b00b9a2b17650fe8ab18e4b2de13aa7e71a66b0fc39c394b9ba3f",
+    "3940575f280faffb28a2644b4f99f828da8f5c89da520a2a63c056fbd0ca5dc7",
+    "d456a421dab992380965b73f2bf97a3dd861ab483d44b91194fa6287b23bd249"
+  ],
+  "meta": {
+    "agent_id": "scripted.patched_forced_door",
+    "trace_id": "patched_forced_door"
+  }
+}

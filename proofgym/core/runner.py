@@ -1,7 +1,18 @@
-"""Enforce-mode episode runner (PLAN.md D7 / §7).
+"""Gate-mode episode runner (PLAN.md D7 / §7).
 
-Illegal actions are rejected, logged with the failing clause id (O1), cost a
-turn, and leave the state unchanged. Physics is not applied on a rejection.
+Two gate modes:
+
+- ``enforce`` (default, unchanged): illegal actions are rejected, logged with
+  the failing clause id (O1), cost a turn, and leave the state unchanged.
+  Physics is not applied on a rejection. Every executed step of an
+  enforce-mode trace therefore satisfies the constitution by construction, so
+  a player behind this gate can never produce an ``illegal_shortcut`` outcome.
+- ``permissive``: audit-mode semantics (D7) applied during live play. Physics
+  executes regardless of legality; a failing clause is reported in the
+  feedback (the alarm rings) and the executed step is sealed into the trace,
+  where audit evaluation scores it as a formal violation. This is what makes
+  the ``illegal_shortcut`` row reachable for players at all.
+
 The runner is world-agnostic: it talks only to ``World`` and ``Checker``.
 """
 
@@ -27,8 +38,13 @@ class EpisodeFinishedError(RuntimeError):
     """Raised when a step is submitted after the horizon has been consumed."""
 
 
+GATE_ENFORCE = "enforce"
+GATE_PERMISSIVE = "permissive"
+GATE_MODES: frozenset[str] = frozenset({GATE_ENFORCE, GATE_PERMISSIVE})
+
+
 class EnforceRunner:
-    """Deterministic enforce-mode loop for one instance.
+    """Deterministic gated loop for one instance.
 
     Args:
         world: Physics engine.
@@ -38,6 +54,12 @@ class EnforceRunner:
         constitution_id: Recorded on the produced trace (informational).
         engine_version: Engine id sealed into the trace.
         meta: Free-form trace metadata (agent id, mission, …).
+        gate: ``enforce`` (default) rejects constitution-illegal actions;
+            ``permissive`` executes them and reports the violation instead
+            (audit semantics during live play).
+
+    Raises:
+        ValueError: If ``horizon`` is not positive or ``gate`` is unknown.
     """
 
     def __init__(
@@ -50,9 +72,12 @@ class EnforceRunner:
         constitution_id: str,
         engine_version: str = ENGINE_VERSION,
         meta: Mapping[str, Any] | None = None,
+        gate: str = GATE_ENFORCE,
     ) -> None:
         if horizon <= 0:
             raise ValueError(f"horizon must be positive, got {horizon}")
+        if gate not in GATE_MODES:
+            raise ValueError(f"gate must be one of {sorted(GATE_MODES)}, got {gate!r}")
         self.world = world
         self.instance = instance
         self.checker = checker
@@ -60,6 +85,7 @@ class EnforceRunner:
         self.constitution_id = constitution_id
         self.engine_version = engine_version
         self.meta: dict[str, Any] = dict(meta or {})
+        self.gate = gate
         self.state: State = world.initial_state(instance)
         self.steps: list[TraceStep] = []
         self.state_hashes: list[str] = [self.state.state_hash()]
@@ -71,14 +97,20 @@ class EnforceRunner:
         return len(self.steps)
 
     def submit(self, action: Action) -> GateFeedback:
-        """Gate ``action``: accept and apply, or reject, cost a turn, no change.
+        """Gate ``action`` according to the runner's gate mode.
+
+        In ``enforce`` mode a constitution-illegal action is rejected: it
+        costs a turn and changes nothing. In ``permissive`` mode it executes
+        anyway; the feedback still names the first failing clause, so the
+        player knows the alarm went off. Malformed actions (unknown type, bad
+        arguments) are rejected in both modes.
 
         Args:
             action: Typed action submitted by the player.
 
         Returns:
-            Gate feedback. On rejection ``failing_clause_id`` is the first
-            failing clause in constitution order (O1).
+            Gate feedback. ``failing_clause_id`` is the first failing clause
+            in constitution order (O1), or ``None`` if every clause held.
 
         Raises:
             EpisodeFinishedError: If the horizon has already been consumed.
@@ -98,14 +130,14 @@ class EnforceRunner:
             )
         results = tuple(self.checker.check_transition(self.state, action, successor))
         failing = _first_failing_clause(results)
-        if failing is not None:
+        if failing is not None and self.gate == GATE_ENFORCE:
             return self._reject(
                 action,
                 failing_clause_id=failing,
                 results=results,
                 error=None,
             )
-        return self._accept(action, successor, results)
+        return self._accept(action, successor, results, failing_clause_id=failing)
 
     def to_trace(self) -> Trace:
         """Seal the episode so far as a replayable trace.
@@ -151,12 +183,18 @@ class EnforceRunner:
         action: Action,
         successor: State,
         results: tuple[ClauseResult, ...],
+        *,
+        failing_clause_id: str | None = None,
     ) -> GateFeedback:
         self.state = successor
         self.steps.append(TraceStep(action=action, executed=True))
         self.state_hashes.append(self.state.state_hash())
         self._tick()
-        return GateFeedback(executed=True, failing_clause_id=None, clause_results=results)
+        return GateFeedback(
+            executed=True,
+            failing_clause_id=failing_clause_id,
+            clause_results=results,
+        )
 
     def _reject(
         self,

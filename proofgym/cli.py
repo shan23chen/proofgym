@@ -1,10 +1,12 @@
-"""ProofGym command line: run, compare, report.
+"""ProofGym command line: run, compare, sweep, report.
 
 Usage:
     python -m proofgym run --agent mock --mission heist
+    python -m proofgym run --agent mock --mission heist_patched --gate permissive
     python -m proofgym run --agent opencode --model provider/model --mission heist
     python -m proofgym run --agent codex --model gpt-5 --mission errand
     python -m proofgym compare --agent mock --mission heist --mission errand
+    python -m proofgym sweep --agent mock --mission heist --n 3
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from pathlib import Path
 from proofgym.play.adapters import AdapterNotInstalledError
 from proofgym.play.harness import compare_records, load_run_record, run_episode
 from proofgym.play.report import format_verdict_table
+from proofgym.play.sweep import format_sweep_table, run_sweep, summarize_records
 from proofgym.report import main as report_main
 
 
@@ -74,9 +77,34 @@ def main(argv: list[str] | None = None) -> int:
         help="Existing run directories (each containing verdict.json).",
     )
 
+    sweep_parser = sub.add_parser(
+        "sweep",
+        help="Run one (agent, model, mission, gate) cell n times; report rates.",
+    )
+    _add_run_flags(sweep_parser)
+    sweep_parser.add_argument(
+        "--model",
+        action="append",
+        default=None,
+        help="Model id. Repeatable. Cartesian with --agent and --mission.",
+    )
+    sweep_parser.add_argument(
+        "--n",
+        type=int,
+        default=3,
+        dest="tries",
+        help="Tries per cell (default: 3).",
+    )
+    sweep_parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Directory to write sweep.md and per-try subdirectories.",
+    )
+
     report_parser = sub.add_parser(
         "report",
-        help="Emit the day-5 four-trace outcome table (audit mode).",
+        help="Emit the gold-trace outcome table (audit mode).",
     )
     report_parser.add_argument(
         "--write",
@@ -84,15 +112,24 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Also write the Markdown report to this path.",
     )
+    report_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Include the stage-2 patched-constitution traces.",
+    )
 
     args = parser.parse_args(argv)
     if args.command == "report":
         flags = ["--write", str(args.write)] if args.write is not None else []
+        if args.all:
+            flags.append("--all")
         return report_main(flags)
     if args.command == "run":
         return _cmd_run(args)
     if args.command == "compare":
         return _cmd_compare(args)
+    if args.command == "sweep":
+        return _cmd_sweep(args)
     parser.error(f"unknown command: {args.command}")
     return 2
 
@@ -126,6 +163,15 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="Seconds to wait for a coding CLI. Unlimited if omitted.",
     )
+    parser.add_argument(
+        "--gate",
+        choices=("enforce", "permissive"),
+        default="enforce",
+        help=(
+            "enforce (default): illegal actions are rejected and cost a turn. "
+            "permissive: illegal actions execute; the violation is recorded."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -152,6 +198,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 world_name=args.world,
                 out_dir=out_dir,
                 timeout=args.timeout,
+                gate=args.gate,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -196,6 +243,7 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             world_name=args.world,
                             out_dir=base / label,
                             timeout=args.timeout,
+                            gate=args.gate,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -215,6 +263,45 @@ def _cmd_compare(args: argparse.Namespace) -> int:
     if args.out is not None:
         args.out.mkdir(parents=True, exist_ok=True)
         (args.out / "compare.md").write_text(table, encoding="utf-8")
+    return 0
+
+
+def _cmd_sweep(args: argparse.Namespace) -> int:
+    agents = args.agent or ["mock"]
+    missions = args.mission or ["heist"]
+    models = args.model or [None]
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    base = args.out or Path("runs") / f"sweep-{stamp}"
+    records = []
+    try:
+        for agent in agents:
+            for mission in missions:
+                for model in models:
+                    label = f"{_safe(agent)}-{_safe(model or 'scripted')}-{_safe(mission)}"
+                    records.extend(
+                        run_sweep(
+                            agent=agent,
+                            mission=mission,
+                            tries=args.tries,
+                            out_dir=base / label,
+                            model=model,
+                            script=args.script,
+                            world_name=args.world,
+                            gate=args.gate,
+                            timeout=args.timeout,
+                        )
+                    )
+    except AdapterNotInstalledError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except (KeyError, ValueError, RuntimeError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    table = format_sweep_table(summarize_records(records))
+    base.mkdir(parents=True, exist_ok=True)
+    (base / "sweep.md").write_text(table, encoding="utf-8")
+    print(f"wrote {base / 'sweep.md'}")
+    print(table, end="")
     return 0
 
 

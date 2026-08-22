@@ -8,7 +8,7 @@ from typing import Any, Protocol
 
 from proofgym.core.protocols import Clause, IntentOracle, World
 from proofgym.core.types import Instance, State
-from proofgym.worlds.museum.constitution import CONSTITUTION_ID, public_constitution
+from proofgym.worlds.museum.constitution import constitution_for_instance
 from proofgym.worlds.museum.instances import instance_for_mission
 from proofgym.worlds.museum.intent import MuseumIntentOracle
 from proofgym.worlds.museum.physics import MuseumWorld
@@ -77,12 +77,14 @@ class WorldBundle:
 
     The player workspace is built only from ``manual`` plus public instance
     fields (mission id, horizon). Intent and instance parameters stay here.
+    A world may ship several constitution versions (for example the flawed v0
+    and the patched v1); ``constitution_for_instance`` resolves which one an
+    instance is played and evaluated under.
     """
 
     name: str
     world: World
-    constitution: Sequence[Clause]
-    constitution_id: str
+    constitution_for_instance: Callable[[Instance], tuple[Sequence[Clause], str]]
     intent: IntentOracle
     manual: PublicManual
     instance_for_mission: Callable[[str], Instance]
@@ -95,7 +97,7 @@ def load_bundle(name: str) -> WorldBundle:
         name: World id. The pilot ships ``museum`` only.
 
     Returns:
-        Bundle with physics, public constitution, hidden intent, and manual.
+        Bundle with physics, constitution resolver, hidden intent, and manual.
 
     Raises:
         KeyError: If ``name`` is unknown.
@@ -105,8 +107,7 @@ def load_bundle(name: str) -> WorldBundle:
     return WorldBundle(
         name="museum",
         world=MuseumWorld(),
-        constitution=public_constitution(),
-        constitution_id=CONSTITUTION_ID,
+        constitution_for_instance=constitution_for_instance,
         intent=MuseumIntentOracle(),
         manual=_CallableManual(task_markdown, observe, state_from_observation),
         instance_for_mission=instance_for_mission,

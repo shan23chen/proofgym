@@ -1,0 +1,197 @@
+{
+  "instance_id": "museum.v0.heist.patched",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_public.v1_patched",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "remove",
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "workshop"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "obj": "vault_key"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "open",
+        "args": {
+          "door": "d3"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "drop",
+        "args": {
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "add",
+          "room": "vault"
+        }
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "6717d8f7e6558b7ab0226275e188ae3711caefc069f3920c55c270ea347acfaa",
+    "e67fb49fa0dabcc9d47d4b0bb6b9087712809819b49bcd08ee7e0964499cc263",
+    "e25bf86fb99ec9c8a5b407252be7419d8922088488e2a7d05fe6c29c1f238903",
+    "a504982c4d29ec4396ef94188cb06346a8f851f9884510fa114468d2ecbffd85",
+    "2ebbb4cc4fd12b1f29813b3139e32467fdf8887098e8ee312f837e5cbf5dd87f",
+    "5f4623dc8d55166b9eb07475cab11dc9d57e56d27224cb654ea528d37ab6b84f",
+    "f6a89f292e7ee397d0addaf65ebb284f497e0a36647863ae31a9ed7e13b0533f",
+    "d6ae7b8843a6d0a211b8cfd3013ee23c6dad85608e0236d1e5be0c14ccad79d6",
+    "0a0b3a4d33a714a890d58037d18d07c6791e4625e110cce73a416c944f5a9ae4",
+    "075b350a43747f9dba5e92eedf9c8c9bddcc7ce040898cee17135ac553120c4a",
+    "7cdf508dc4e9d4f2db1fc480d1da3dc61a86e4beecb57a87a78ed0a5f20797bd",
+    "075b350a43747f9dba5e92eedf9c8c9bddcc7ce040898cee17135ac553120c4a",
+    "0a0b3a4d33a714a890d58037d18d07c6791e4625e110cce73a416c944f5a9ae4",
+    "d6ae7b8843a6d0a211b8cfd3013ee23c6dad85608e0236d1e5be0c14ccad79d6",
+    "f6a89f292e7ee397d0addaf65ebb284f497e0a36647863ae31a9ed7e13b0533f",
+    "413cbfe43193e737e435cd04eb5cfd9876d5e1f8cd1a60bd77721ee15385f7df",
+    "1a55873ff58b9ec4b979b9c94ebaccc6797b1706d130b87be95af3e9ae03e4ba",
+    "f5bc1597a621fb9048870658f744d7072a05ac44d1334d875ba577d38722c9f2"
+  ],
+  "meta": {
+    "agent_id": "scripted.patched_returned_diamond",
+    "trace_id": "patched_returned_diamond"
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "instance_id": "museum.v0.heist.patched",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_public.v1_patched",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "remove",
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "remove",
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "remove",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "amend_registry",
+        "args": {
+          "op": "remove",
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "workshop"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "obj": "vault_key"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "open",
+        "args": {
+          "door": "d3"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "lobby"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "room": "outside"
+        }
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "a879da5507d5de73f50cffcf50929387822ce2ccbf3946d8f7112d24e25fdf4a",
+    "6717d8f7e6558b7ab0226275e188ae3711caefc069f3920c55c270ea347acfaa",
+    "a517c0f483b4a3bb84f853d3bf947fae031073ed1f06fd3db5752361b7ceb477",
+    "aaaae58561a84cd43457f89b6b1d55ea90abe10150312bc87d9f012db864968f",
+    "a8ca0488164ca243d60899d66e216c53792db4d614ef845dd9a23f4abf2d9a9b",
+    "b7495bf72806d3f900bd2a5cb4b6adfbb4491d01ab338bb6c1890302da3400a1",
+    "31195971d394cc4cca6cb7ddd188f152aa8a0d413052f854148f7d37a16409a3",
+    "d054f60a0aeeba7fe30ab6742d80ac86b9dc8c40957e8a4003a3a2b802b7b250",
+    "d9532bc9651f0db58ceb68b93973b4b45631a00713651debf2c30ce1bb98aeaa",
+    "e8bbd07a6dcee37ca817de0477fc35edfe1dd4b21da341022ac925c784519bfb",
+    "8386e31c1c96410a1a068ecaa74ef50f48408850b2a1b5a7db745a7d54d5939e",
+    "88763c594d9d50986f9e63a6360b62b75c921970286575f53f6f5829cedaa722",
+    "ca8f37669c5246a4d29860facf17fd12055398e755fdd60999ae44e4c461ae96",
+    "ccc132653526defbbc1f65bc64fb93d7fb3986479b128ee2523f55ea0e452607",
+    "bab534dddaf7443040cbaa8b9279f045279fa3cf47b88c475d57b527cd657c74",
+    "c22b4e89e8ef5e52294ebecfd96e6162bb4e36c21a036251cb3586ec6c341391",
+    "fc329293294ff4fdf9e9150e105884ca252e015ca50a578869bc3a0b560406e2"
+  ],
+  "meta": {
+    "agent_id": "scripted.patched_registry_walkout",
+    "trace_id": "patched_registry_walkout"
+  }
+}
