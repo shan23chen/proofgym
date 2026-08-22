@@ -1,0 +1,291 @@
+"""Coding-CLI and mock adapters. ProofGym never calls a third-party LLM API."""
+
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any
+
+from proofgym.core.types import Action
+from proofgym.play.isolation import assert_workspace_not_in_checkout
+from proofgym.play.prompt import PLAYER_PROMPT
+from proofgym.play.session import PlaySession
+from proofgym.worlds.museum.sequences import (
+    FORCED_DOOR_ACTIONS,
+    HONEST_ERRAND_ACTIONS,
+    LOST_VISITOR_ACTIONS,
+    REGISTRY_HEIST_ACTIONS,
+)
+
+MOCK_SCRIPTS: dict[str, tuple[Action, ...]] = {
+    "honest_errand": HONEST_ERRAND_ACTIONS,
+    "registry_heist": REGISTRY_HEIST_ACTIONS,
+    "forced_door": FORCED_DOOR_ACTIONS,
+    "lost_visitor": LOST_VISITOR_ACTIONS,
+}
+
+DEFAULT_SCRIPT: dict[str, str] = {
+    "errand": "honest_errand",
+    "heist": "registry_heist",
+}
+
+OPENCODE_INSTALL_HINT = (
+    "OpenCode is not installed (no `opencode` on PATH).\n"
+    "Install:  curl -fsSL https://opencode.ai/install | bash\n"
+    "     or:  npm install -g opencode-ai\n"
+    "Auth:     opencode auth login   (or provider keys in the environment / .env)\n"
+    "ProofGym never calls a third-party LLM API itself. Live model evals need "
+    "this CLI and credentials on the machine running the eval."
+)
+
+CODEX_INSTALL_HINT = (
+    "Codex is not installed (no `codex` on PATH).\n"
+    "Install:  npm install -g @openai/codex\n"
+    "Auth:     codex login   or set CODEX_API_KEY\n"
+    "ProofGym invokes `codex exec --sandbox workspace-write` (default sandbox "
+    "is read-only) so the agent can call the step CLI and write files. "
+    "ProofGym never calls a third-party LLM API itself. Live model evals need "
+    "this CLI and credentials on the machine running the eval."
+)
+
+
+class AdapterNotInstalledError(FileNotFoundError):
+    """Raised when a required coding CLI is missing from PATH."""
+
+
+def script_actions(mission_id: str, script: str | None = None) -> tuple[Action, ...]:
+    """Return the scripted action list for the mock adapter.
+
+    Args:
+        mission_id: ``errand`` or ``heist``.
+        script: Optional script id. Defaults to ``honest_errand`` / ``registry_heist``.
+
+    Returns:
+        Immutable action tuple.
+
+    Raises:
+        KeyError: If the mission or script id is unknown.
+    """
+    name = script if script is not None else DEFAULT_SCRIPT[mission_id]
+    try:
+        return MOCK_SCRIPTS[name]
+    except KeyError as exc:
+        raise KeyError(f"unknown mock script: {name}") from exc
+
+
+def require_binary(name: str, hint: str) -> str:
+    """Return the path to ``name`` on PATH, or fail with an install hint.
+
+    Args:
+        name: Executable name.
+        hint: Message used when the binary is missing.
+
+    Returns:
+        Absolute path to the executable.
+
+    Raises:
+        AdapterNotInstalledError: If ``name`` is not on PATH. Never skipped.
+    """
+    path = shutil.which(name)
+    if path is None:
+        raise AdapterNotInstalledError(hint)
+    return path
+
+
+class MockAdapter:
+    """Offline scripted player. No network, no third-party CLI."""
+
+    name = "mock"
+
+    def __init__(self, actions: Sequence[Action]) -> None:
+        self.actions = tuple(actions)
+
+    def play(self, session: PlaySession, **_: Any) -> dict[str, Any]:
+        """Replay ``actions`` through enforce mode on ``session``.
+
+        Args:
+            session: Live play session (already created).
+
+        Returns:
+            Adapter metadata (no subprocess).
+        """
+        for action in self.actions:
+            if session.done:
+                break
+            session.submit(action)
+        return {
+            "agent": self.name,
+            "argv": [],
+            "returncode": 0,
+        }
+
+
+class OpenCodeAdapter:
+    """Spawn `opencode run` pointed at the player workspace."""
+
+    name = "opencode"
+
+    def play(
+        self,
+        session: PlaySession,
+        *,
+        model: str,
+        timeout: float | None = None,
+        env: Mapping[str, str] | None = None,
+        extra_path: Sequence[Path] = (),
+    ) -> dict[str, Any]:
+        """Run OpenCode non-interactively against ``session.workspace``.
+
+        Args:
+            session: Episode whose workspace is the only public view.
+            model: ``provider/model`` string passed to ``--model``.
+            timeout: Subprocess timeout in seconds, or ``None``.
+            env: Optional environment overlay.
+            extra_path: Directories prepended to ``PATH`` (act wrapper).
+
+        Returns:
+            Adapter metadata including argv and return code.
+
+        Raises:
+            AdapterNotInstalledError: If ``opencode`` is not on PATH.
+            RuntimeError: If the workspace sits inside the source checkout.
+        """
+        binary = require_binary("opencode", OPENCODE_INSTALL_HINT)
+        workspace = session.workspace.resolve()
+        assert_workspace_not_in_checkout(workspace)
+        argv = [
+            binary,
+            "run",
+            "--dir",
+            str(workspace),
+            "--model",
+            model,
+            "--format",
+            "json",
+            "--auto",
+            PLAYER_PROMPT,
+        ]
+        completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
+        return _meta(self.name, argv, completed)
+
+
+class CodexAdapter:
+    """Spawn `codex exec` pointed at the player workspace."""
+
+    name = "codex"
+
+    def play(
+        self,
+        session: PlaySession,
+        *,
+        model: str,
+        timeout: float | None = None,
+        env: Mapping[str, str] | None = None,
+        extra_path: Sequence[Path] = (),
+    ) -> dict[str, Any]:
+        """Run Codex non-interactively against ``session.workspace``.
+
+        Args:
+            session: Episode whose workspace is the only public view.
+            model: Codex ``--model`` value.
+            timeout: Subprocess timeout in seconds, or ``None``.
+            env: Optional environment overlay.
+            extra_path: Directories prepended to ``PATH`` (act wrapper).
+
+        Returns:
+            Adapter metadata including argv and return code.
+
+        Raises:
+            AdapterNotInstalledError: If ``codex`` is not on PATH.
+            RuntimeError: If the workspace sits inside the source checkout.
+        """
+        binary = require_binary("codex", CODEX_INSTALL_HINT)
+        workspace = session.workspace.resolve()
+        assert_workspace_not_in_checkout(workspace)
+        argv = [
+            binary,
+            "exec",
+            "--sandbox",
+            "workspace-write",
+            "--skip-git-repo-check",
+            "-C",
+            str(workspace),
+            "--model",
+            model,
+            PLAYER_PROMPT,
+        ]
+        completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
+        return _meta(self.name, argv, completed)
+
+
+def write_act_wrapper(bin_dir: Path, workspace: Path, *, pythonpath: str | None) -> Path:
+    """Write a ``proofgym-act`` helper *outside* the player workspace.
+
+    Args:
+        bin_dir: Directory that will be prepended to the CLI's ``PATH``.
+        workspace: Player workspace passed as ``--run``.
+        pythonpath: Optional source-tree path so ``python -m proofgym.act``
+            works without a site-packages install. Stored only in this
+            wrapper, not in the workspace.
+
+    Returns:
+        Path to the executable wrapper.
+    """
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    script = bin_dir / "proofgym-act"
+    lines = ["#!/bin/sh", "set -e"]
+    if pythonpath:
+        quoted_path = _shell_quote(pythonpath)
+        lines.append(f"export PYTHONPATH={quoted_path}${{PYTHONPATH:+:$PYTHONPATH}}")
+    python = _shell_quote(sys.executable)
+    run_dir = _shell_quote(str(workspace.resolve()))
+    lines.append(f'exec {python} -m proofgym.act --run {run_dir} "$@"')
+    script.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    script.chmod(0o755)
+    return script
+
+
+def _spawn(
+    argv: list[str],
+    *,
+    cwd: Path,
+    timeout: float | None,
+    env: Mapping[str, str] | None,
+    extra_path: Sequence[Path],
+) -> subprocess.CompletedProcess[str]:
+    merged = dict(env) if env is not None else dict(os.environ)
+    if extra_path:
+        prefix = ":".join(str(path) for path in extra_path)
+        merged["PATH"] = prefix + ((":" + merged["PATH"]) if merged.get("PATH") else "")
+    return subprocess.run(
+        argv,
+        cwd=cwd,
+        env=merged,
+        text=True,
+        capture_output=True,
+        timeout=timeout,
+        check=False,
+    )
+
+
+def _meta(
+    agent: str,
+    argv: list[str],
+    completed: subprocess.CompletedProcess[str],
+) -> dict[str, Any]:
+    return {
+        "agent": agent,
+        "argv": argv,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
+def _shell_quote(value: str) -> str:
+    """Single-quote ``value`` for a POSIX shell."""
+    return "'" + value.replace("'", "'\\''") + "'"

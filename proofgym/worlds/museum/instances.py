@@ -35,3 +35,26 @@ INSTANCES: dict[str, Instance] = {
     ERRAND_INSTANCE_ID: ERRAND_INSTANCE,
     HEIST_INSTANCE_ID: HEIST_INSTANCE,
 }
+
+_MISSION_INSTANCE: dict[str, Instance] = {
+    ERRAND: ERRAND_INSTANCE,
+    HEIST: HEIST_INSTANCE,
+}
+
+
+def instance_for_mission(mission_id: str) -> Instance:
+    """Return the seeded base instance for a museum mission.
+
+    Args:
+        mission_id: ``errand`` or ``heist``.
+
+    Returns:
+        The matching instance.
+
+    Raises:
+        KeyError: If ``mission_id`` is unknown.
+    """
+    try:
+        return _MISSION_INSTANCE[mission_id]
+    except KeyError as exc:
+        raise KeyError(f"unknown museum mission: {mission_id}") from exc
