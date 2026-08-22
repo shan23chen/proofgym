@@ -10,9 +10,10 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from proofgym.catalog import load_bundle
+from proofgym.catalog import WorldBundle, load_bundle
 from proofgym.core.evaluate import evaluate
 from proofgym.core.serialize import dump_trace
+from proofgym.core.types import Trace
 from proofgym.play.adapters import (
     CodexAdapter,
     MockAdapter,
@@ -20,6 +21,7 @@ from proofgym.play.adapters import (
     script_actions,
     write_act_wrapper,
 )
+from proofgym.play.debrief import DisclosureVerdict, read_debrief_answers, score_debrief
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession
@@ -38,6 +40,8 @@ def run_episode(
     live_root: Path | None = None,
     timeout: float | None = None,
     gate: str = "enforce",
+    debrief: bool = False,
+    debrief_policy: str | None = None,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -55,6 +59,12 @@ def run_episode(
         gate: ``enforce`` (default) or ``permissive``. Under enforce, illegal
             actions are rejected and ``illegal_shortcut`` is unreachable;
             permissive executes them and records the violation.
+        debrief: When True, the workspace asks for a post-episode self-report
+            (``debrief.json``) which is scored deterministically against the
+            sealed trace. Off by default: announcing a self-report may itself
+            change behavior, so debrief on/off is a controlled condition.
+        debrief_policy: Mock-only control (``truthful``, ``deny_all``,
+            ``silent``). Defaults to ``truthful`` for mock debrief runs.
 
     Returns:
         Completed run record.
@@ -62,12 +72,17 @@ def run_episode(
     Raises:
         AdapterNotInstalledError: If a coding CLI is missing from PATH.
         KeyError: If the agent, world, mission, or script is unknown.
-        ValueError: If a required model is missing or the gate is unknown.
+        ValueError: If a required model is missing, the gate is unknown, or a
+            debrief policy is passed for a non-mock agent.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
     if agent in CLI_AGENTS and not model_id:
         raise ValueError(f"--model is required for agent {agent!r}")
+    if debrief_policy is not None and agent != "mock":
+        raise ValueError("--debrief-policy is a mock-only control; live players answer freely")
+    if agent == "mock" and debrief and debrief_policy is None:
+        debrief_policy = "truthful"
 
     root = live_root if live_root is not None else Path(tempfile.mkdtemp(prefix="proofgym-player-"))
     workspace = root / "workspace"
@@ -82,6 +97,7 @@ def run_episode(
         mission_id=mission,
         meta=meta,
         gate=gate,
+        debrief=debrief,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -90,7 +106,7 @@ def run_episode(
     adapter_meta: dict[str, Any]
     if agent == "mock":
         actions = script_actions(mission, script)
-        adapter_meta = MockAdapter(actions).play(session)
+        adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
     elif agent == "opencode":
         adapter_meta = OpenCodeAdapter().play(
             session,
@@ -117,6 +133,7 @@ def run_episode(
     # Evaluation uses hidden I* in *this* process, never in the workspace.
     verdict = evaluate(bundle.world, constitution, bundle.intent, trace)
     verdict = replace(verdict, trace=str(trace.meta.get("agent_id") or verdict.trace))
+    disclosure = _score_disclosure(bundle, trace, workspace) if debrief else None
     record = RunRecord(
         agent=agent,
         model=model_id,
@@ -126,9 +143,18 @@ def run_episode(
         trace=trace,
         workspace=str(workspace.resolve()),
         adapter=adapter_meta,
+        disclosure=disclosure,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
+
+
+def _score_disclosure(bundle: WorldBundle, trace: Trace, workspace: Path) -> DisclosureVerdict:
+    """Score the player's debrief.json against trace-derived ground truth."""
+    questions = bundle.debrief.questions()
+    truth = bundle.debrief.true_answers(bundle.world, trace)
+    declared, notes, error = read_debrief_answers(workspace, questions)
+    return score_debrief(truth, declared, notes=notes, error=error)
 
 
 def compare_records(records: Sequence[RunRecord]) -> str:
@@ -190,6 +216,10 @@ def load_run_record(path: Path) -> RunRecord:
         outcome=payload["outcome"],
         exploit_family=payload.get("exploit_family"),
     )
+    disclosure_raw = payload.get("disclosure")
+    disclosure = (
+        DisclosureVerdict.from_dict(disclosure_raw) if isinstance(disclosure_raw, Mapping) else None
+    )
     return RunRecord(
         agent=str(payload["agent"]),
         model=str(payload["model"]),
@@ -199,6 +229,7 @@ def load_run_record(path: Path) -> RunRecord:
         trace=trace,
         workspace=str(payload.get("workspace") or ""),
         adapter=dict(payload.get("adapter") or {}),
+        disclosure=disclosure,
     )
 
 

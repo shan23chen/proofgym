@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from proofgym.play.harness import run_episode
@@ -31,6 +31,8 @@ class SweepSummary:
         outcome_counts: Outcome label to occurrence count.
         mean_steps: Mean submitted steps per episode.
         mean_rejected: Mean gate-rejected steps per episode.
+        disclosure_counts: Disclosure label to occurrence count. Empty when
+            the cell ran without debriefs.
     """
 
     agent: str
@@ -41,6 +43,7 @@ class SweepSummary:
     outcome_counts: dict[str, int]
     mean_steps: float
     mean_rejected: float
+    disclosure_counts: dict[str, int] = field(default_factory=dict)
 
     def outcome_rates(self) -> str:
         """Render outcome counts as ``label n/tries`` fragments.
@@ -49,6 +52,13 @@ class SweepSummary:
             Comma-joined rates, most frequent first, ties broken by label.
         """
         ordered = sorted(self.outcome_counts.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
+
+    def disclosure_rates(self) -> str:
+        """Render disclosure counts as ``label n/tries`` fragments, or ``—``."""
+        if not self.disclosure_counts:
+            return "—"
+        ordered = sorted(self.disclosure_counts.items(), key=lambda item: (-item[1], item[0]))
         return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
 
 
@@ -63,6 +73,8 @@ def run_sweep(
     world_name: str = "museum",
     gate: str = "enforce",
     timeout: float | None = None,
+    debrief: bool = False,
+    debrief_policy: str | None = None,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -78,6 +90,8 @@ def run_sweep(
         world_name: Catalog world.
         gate: ``enforce`` or ``permissive``.
         timeout: Subprocess timeout for coding CLIs.
+        debrief: Ask for and score a post-episode self-report.
+        debrief_policy: Mock-only debrief control.
 
     Returns:
         One completed run record per try, in order.
@@ -101,6 +115,8 @@ def run_sweep(
                 out_dir=out_dir / f"try-{index:02d}",
                 timeout=timeout,
                 gate=gate,
+                debrief=debrief,
+                debrief_policy=debrief_policy,
             )
         )
     return records
@@ -130,6 +146,9 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         outcomes = Counter(record.verdict.outcome for record in cell)
         steps = [len(record.trace.steps) for record in cell]
         rejected = [record.rejected_steps() for record in cell]
+        disclosures = Counter(
+            record.disclosure.label for record in cell if record.disclosure is not None
+        )
         summaries.append(
             SweepSummary(
                 agent=key[0],
@@ -140,6 +159,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 outcome_counts=dict(outcomes),
                 mean_steps=sum(steps) / len(cell),
                 mean_rejected=sum(rejected) / len(cell),
+                disclosure_counts=dict(disclosures),
             )
         )
     return summaries
@@ -154,7 +174,17 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
     Returns:
         Markdown table with outcome rates and step statistics.
     """
-    header = ("Agent", "Model", "Mission", "Gate", "Tries", "Outcomes", "Steps", "Rejected")
+    header = (
+        "Agent",
+        "Model",
+        "Mission",
+        "Gate",
+        "Tries",
+        "Outcomes",
+        "Steps",
+        "Rejected",
+        "Disclosure",
+    )
     rows: list[tuple[str, ...]] = []
     for summary in summaries:
         rows.append(
@@ -167,6 +197,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 summary.outcome_rates(),
                 f"{summary.mean_steps:.1f}",
                 f"{summary.mean_rejected:.1f}",
+                summary.disclosure_rates(),
             )
         )
     widths = [len(title) for title in header]
