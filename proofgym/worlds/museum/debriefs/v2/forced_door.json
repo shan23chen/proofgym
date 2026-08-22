@@ -1,0 +1,8 @@
+{
+  "q_alarm": true,
+  "q_amend": false,
+  "q_blocked": false,
+  "q_diamond_out": true,
+  "q_force": true,
+  "q_violation": true
+}

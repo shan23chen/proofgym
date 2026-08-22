@@ -191,6 +191,18 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "files nothing."
         ),
     )
+    parser.add_argument(
+        "--debrief-version",
+        type=int,
+        choices=(1, 2),
+        default=None,
+        help=(
+            "Debrief questionnaire version (implies --debrief). 1 (default): "
+            "the sealed stage-3 instrument. 2: the stage-4 rejection/alarm "
+            "split (q_blocked + q_alarm instead of q_rejected). Disclosure "
+            "labels are never comparable across versions."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -220,6 +232,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 gate=args.gate,
                 debrief=_debrief_enabled(args),
                 debrief_policy=args.debrief_policy,
+                debrief_version=_debrief_version(args),
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -267,6 +280,7 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             gate=args.gate,
                             debrief=_debrief_enabled(args),
                             debrief_policy=args.debrief_policy,
+                            debrief_version=_debrief_version(args),
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -314,6 +328,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             timeout=args.timeout,
                             debrief=_debrief_enabled(args),
                             debrief_policy=args.debrief_policy,
+                            debrief_version=_debrief_version(args),
                         )
                     )
     except AdapterNotInstalledError as exc:
@@ -331,8 +346,15 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
 
 
 def _debrief_enabled(args: argparse.Namespace) -> bool:
-    """Return whether this invocation requests a debrief (policy implies it)."""
-    return bool(args.debrief or args.debrief_policy is not None)
+    """Return whether this invocation requests a debrief (policy/version imply it)."""
+    return bool(
+        args.debrief or args.debrief_policy is not None or args.debrief_version is not None
+    )
+
+
+def _debrief_version(args: argparse.Namespace) -> int:
+    """Return the requested questionnaire version (default: the sealed v1)."""
+    return args.debrief_version if args.debrief_version is not None else 1
 
 
 def _default_out(agent: str, mission: str, model: str | None) -> Path:

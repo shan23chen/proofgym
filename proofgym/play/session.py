@@ -90,6 +90,7 @@ class PlaySession:
         private_dir: Path,
         last_feedback: GateFeedback | None = None,
         debrief_enabled: bool = False,
+        debrief_version: int = 1,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -98,6 +99,7 @@ class PlaySession:
         self.private_dir = private_dir
         self.last_feedback = last_feedback
         self.debrief_enabled = debrief_enabled
+        self.debrief_version = debrief_version
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -110,6 +112,7 @@ class PlaySession:
         meta: Mapping[str, Any] | None = None,
         gate: str = GATE_ENFORCE,
         debrief: bool = False,
+        debrief_version: int = 1,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -120,22 +123,28 @@ class PlaySession:
             meta: Extra trace metadata (agent id, model, …).
             gate: ``enforce`` (default) or ``permissive``. Recorded in the
                 authoritative record and in trace metadata; results are not
-                comparable across gate modes.
+                comparable across gate modes. Also selects the gate-accurate
+                TASK.md feedback wording (STAGE4.md §3.2).
             debrief: When True, DEBRIEF.md asks the player to file
                 ``debrief.json`` before stopping. Off by default so
                 debrief-free runs stay comparable with earlier sweeps
                 (announcing a self-report may itself change behavior).
+            debrief_version: Questionnaire version (STAGE4.md §3.1). ``1``
+                (default) is the sealed stage-3 instrument; ``2`` is the
+                rejection/alarm split. Recorded in the authoritative record
+                only when non-default, so v1 workspaces stay byte-identical.
 
         Returns:
             Initialized session with public files and the private record written.
 
         Raises:
-            ValueError: If the workspace directory is named ``private``.
+            ValueError: If the workspace directory is named ``private`` or
+                the debrief version is unknown.
         """
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
         private_dir.mkdir(parents=True, exist_ok=True)
-        bundle = load_bundle(world_name)
+        bundle = load_bundle(world_name, debrief_version=debrief_version)
         instance = bundle.instance_for_mission(mission_id)
         mission = bundle.world.mission_for(instance)
         constitution, constitution_id = bundle.constitution_for_instance(instance)
@@ -161,9 +170,10 @@ class PlaySession:
             runner,
             private_dir=private_dir,
             debrief_enabled=debrief,
+            debrief_version=debrief_version,
         )
         (workspace / TASK_NAME).write_text(
-            bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon),
+            bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon, gate=gate),
             encoding="utf-8",
         )
         if debrief:
@@ -208,7 +218,8 @@ class PlaySession:
                 "and cannot be used to restore an episode."
             )
         episode = _read_json(episode_path)
-        bundle = load_bundle(str(episode["world"]))
+        debrief_version = int(episode.get("debrief_version", 1))
+        bundle = load_bundle(str(episode["world"]), debrief_version=debrief_version)
         instance = bundle.world.load_instance(str(episode["instance_id"]))
         mission = bundle.world.mission_for(instance)
         constitution, _ = bundle.constitution_for_instance(instance)
@@ -252,6 +263,7 @@ class PlaySession:
             private_dir=private_dir,
             last_feedback=last_feedback,
             debrief_enabled=bool(episode.get("debrief", False)),
+            debrief_version=debrief_version,
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -321,7 +333,7 @@ class PlaySession:
         _write_json(self.workspace / EPISODE_NAME, mirror)
 
     def _episode_dict(self) -> dict[str, Any]:
-        return {
+        episode = {
             "world": self.bundle.name,
             "instance_id": self.runner.instance.instance_id,
             "constitution_id": self.runner.constitution_id,
@@ -337,6 +349,11 @@ class PlaySession:
             "meta": dict(self.runner.meta),
             "integrity_events": list(self.integrity_events),
         }
+        # Absent means v1: recorded only for non-default questionnaires so
+        # stage-3-style v1 debrief records stay byte-identical (STAGE4.md).
+        if self.debrief_enabled and self.debrief_version != 1:
+            episode["debrief_version"] = self.debrief_version
+        return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:
         """Diff workspace mirrors against the authoritative record.

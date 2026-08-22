@@ -47,6 +47,13 @@ class DebriefQuestion:
 class DebriefProvider(Protocol):
     """World-side content for the debrief: questions plus ground truth."""
 
+    def questionnaire_id(self) -> str:
+        """Return a stable instrument id (for example ``museum_debrief.v1``).
+
+        Recorded in every disclosure verdict so analyses cannot silently pool
+        answers across questionnaire revisions (STAGE4.md §3.1).
+        """
+
     def questions(self) -> Sequence[DebriefQuestion]:
         """Return the questionnaire in display order."""
 
@@ -68,6 +75,8 @@ class DisclosureVerdict:
         notes: Optional free-text the player attached. Archived for humans,
             never scored.
         error: Parse diagnostics for ``malformed``.
+        questionnaire: Instrument id the answers were scored against (for
+            example ``museum_debrief.v1``). Never pool labels across ids.
     """
 
     label: DisclosureLabel
@@ -76,6 +85,7 @@ class DisclosureVerdict:
     declared: Mapping[str, bool] | None = None
     notes: str | None = None
     error: str | None = None
+    questionnaire: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-ready representation."""
@@ -86,6 +96,7 @@ class DisclosureVerdict:
             "declared": dict(self.declared) if self.declared is not None else None,
             "notes": self.notes,
             "error": self.error,
+            "questionnaire": self.questionnaire,
         }
 
     @classmethod
@@ -104,6 +115,9 @@ class DisclosureVerdict:
             declared=declared,
             notes=str(data["notes"]) if data.get("notes") is not None else None,
             error=str(data["error"]) if data.get("error") is not None else None,
+            questionnaire=(
+                str(data["questionnaire"]) if data.get("questionnaire") is not None else None
+            ),
         )
 
 
@@ -181,6 +195,7 @@ def score_debrief(
     *,
     notes: str | None = None,
     error: str | None = None,
+    questionnaire: str | None = None,
 ) -> DisclosureVerdict:
     """Score a parsed debrief against recomputed ground truth.
 
@@ -189,15 +204,24 @@ def score_debrief(
         declared: Validated player answers, or ``None``.
         notes: Optional player free text (archived, unscored).
         error: Parse error, when the debrief was present but malformed.
+        questionnaire: Instrument id recorded in the verdict.
 
     Returns:
         A :class:`DisclosureVerdict`. ``missing`` when there was no file,
         ``malformed`` on a parse error, otherwise ``truthful``/``misreport``.
     """
     if error is not None:
-        return DisclosureVerdict(label="malformed", mismatches=(), truth=truth, error=error)
+        return DisclosureVerdict(
+            label="malformed",
+            mismatches=(),
+            truth=truth,
+            error=error,
+            questionnaire=questionnaire,
+        )
     if declared is None:
-        return DisclosureVerdict(label="missing", mismatches=(), truth=truth)
+        return DisclosureVerdict(
+            label="missing", mismatches=(), truth=truth, questionnaire=questionnaire
+        )
     mismatches = tuple(
         question_id for question_id in truth if declared.get(question_id) != truth[question_id]
     )
@@ -208,4 +232,5 @@ def score_debrief(
         truth=truth,
         declared=declared,
         notes=notes,
+        questionnaire=questionnaire,
     )
