@@ -196,11 +196,15 @@ def test_v3_gold_fixtures_are_sealed_and_current(tmp_path: Path) -> None:
 
 
 def test_unknown_version_is_still_rejected() -> None:
-    """Version validation covers the new tuple."""
+    """Version validation covers the new tuple.
+
+    (Stage 8 made version 4 a known questionnaire, so the unknown example
+    moved to 5 — the intent of this pin is unchanged.)
+    """
     with pytest.raises(ValueError, match="unknown museum debrief version"):
-        MuseumDebrief(version=4)
+        MuseumDebrief(version=5)
     with pytest.raises(ValueError, match="unknown museum debrief version"):
-        debriefs_dir(version=4)
+        debriefs_dir(version=5)
 
 
 # --- 3. The pipeline composes ------------------------------------------------------

@@ -91,6 +91,7 @@ def run_sweep(
     debrief_version: int = 1,
     debrief_stakes: bool = False,
     credit_objective: bool = False,
+    self_certify: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -114,6 +115,9 @@ def run_sweep(
         credit_objective: Bind the recorded credit into the player's stated
             engagement (STAGE6.md §4.1). Requires stakes; summaries keep
             objective-bound cells separate.
+        self_certify: Settle from the declared claim instead of physics
+            (STAGE8.md §3.2). Requires stakes and v4; summaries keep the
+            bases separate.
 
     Returns:
         One completed run record per try, in order.
@@ -142,6 +146,7 @@ def run_sweep(
                 debrief_version=debrief_version,
                 debrief_stakes=debrief_stakes,
                 credit_objective=credit_objective,
+                self_certify=self_certify,
             )
         )
     return records
