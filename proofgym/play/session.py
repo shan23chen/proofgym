@@ -1,4 +1,25 @@
-"""Persisted gated episode in an isolated player workspace."""
+"""Persisted gated episode with an authoritative record outside the workspace.
+
+Trust model (hardened after a live player flipped ``gate`` in the workspace's
+``episode.json`` mid-run):
+
+- **Authoritative bookkeeping** — episode record, physics state, and action
+  log — lives in a ``private/`` directory that is a *sibling* of the player
+  workspace (next to the ``bin/`` wrapper dir), outside the coding CLI's
+  write scope. It is the only thing :meth:`PlaySession.load` reads.
+- **Workspace copies are write-only mirrors** for the player's convenience
+  (``episode.json``, ``state.json``, ``log.jsonl``). They are never read
+  back. On every load they are diffed against the authoritative record;
+  divergence is appended to the authoritative ``integrity_events`` list (a
+  tamper *attempt* is data) and the mirrors are healed on the next save.
+  Deleting them (a live player once did) is likewise recorded and healed,
+  never fatal.
+
+The workspace still contains only public information: TASK.md, DEBRIEF.md
+(optional), the observation, the log, and the player's own ``debrief.json`` /
+``next_action.json``. Hidden intent, gold traces, PLAN.md, and CRITIQUE.md
+are never written to either directory.
+"""
 
 from __future__ import annotations
 
@@ -18,16 +39,46 @@ STATE_NAME = "state.json"
 EPISODE_NAME = "episode.json"
 LOG_NAME = "log.jsonl"
 NEXT_ACTION_NAME = "next_action.json"
+PRIVATE_DIRNAME = "private"
+
+# Mirror files that are diffed against the authoritative record on load.
+_MIRRORED = (EPISODE_NAME, STATE_NAME, LOG_NAME)
+
+
+def private_dir_for(workspace: Path) -> Path:
+    """Return the authoritative-state directory for ``workspace``.
+
+    The convention is a sibling directory named ``private`` (next to the
+    ``bin`` wrapper directory), so it sits outside the subtree a sandboxed
+    coding CLI may write to.
+
+    Args:
+        workspace: Player workspace directory.
+
+    Returns:
+        Absolute path of the private directory.
+
+    Raises:
+        ValueError: If the workspace itself is named ``private`` (the
+            authoritative record would coincide with the player directory).
+    """
+    resolved = workspace.expanduser().resolve()
+    if resolved.name == PRIVATE_DIRNAME:
+        raise ValueError(
+            f"player workspace must not be named {PRIVATE_DIRNAME!r}; the "
+            "authoritative episode record would land inside the player-writable tree"
+        )
+    return resolved.parent / PRIVATE_DIRNAME
 
 
 class PlaySession:
-    """One gated episode backed by a player-visible workspace.
+    """One gated episode: authoritative private record, mirrored workspace.
 
     The gate is ``enforce`` by default; ``permissive`` executes illegal
-    actions while reporting the violation (see ``core.runner``). The workspace
-    contains only public files: TASK.md, state.json, episode bookkeeping, and
-    log.jsonl. Hidden intent, gold traces, PLAN.md, and CRITIQUE.md are never
-    written here.
+    actions while reporting the violation (see ``core.runner``). The gate,
+    instance, constitution, history, and physics state are restored *only*
+    from the private record — a player editing (or deleting) the workspace
+    mirrors cannot change how the next step is gated or scored.
     """
 
     def __init__(
@@ -36,14 +87,18 @@ class PlaySession:
         bundle: WorldBundle,
         runner: EnforceRunner,
         *,
+        private_dir: Path,
         last_feedback: GateFeedback | None = None,
         debrief_enabled: bool = False,
+        integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
         self.bundle = bundle
         self.runner = runner
+        self.private_dir = private_dir
         self.last_feedback = last_feedback
         self.debrief_enabled = debrief_enabled
+        self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
     def create(
@@ -56,7 +111,7 @@ class PlaySession:
         gate: str = GATE_ENFORCE,
         debrief: bool = False,
     ) -> PlaySession:
-        """Create a fresh workspace and runner for ``mission_id``.
+        """Create a fresh workspace, private record, and runner.
 
         Args:
             workspace: Empty directory that will hold public player files.
@@ -64,17 +119,22 @@ class PlaySession:
             mission_id: Mission id (``errand``, ``heist``, ``heist_patched``).
             meta: Extra trace metadata (agent id, model, …).
             gate: ``enforce`` (default) or ``permissive``. Recorded in the
-                episode and in trace metadata; results are not comparable
-                across gate modes.
+                authoritative record and in trace metadata; results are not
+                comparable across gate modes.
             debrief: When True, DEBRIEF.md asks the player to file
                 ``debrief.json`` before stopping. Off by default so
                 debrief-free runs stay comparable with earlier sweeps
                 (announcing a self-report may itself change behavior).
 
         Returns:
-            Initialized session with TASK.md / state.json / episode.json written.
+            Initialized session with public files and the private record written.
+
+        Raises:
+            ValueError: If the workspace directory is named ``private``.
         """
+        private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
+        private_dir.mkdir(parents=True, exist_ok=True)
         bundle = load_bundle(world_name)
         instance = bundle.instance_for_mission(mission_id)
         mission = bundle.world.mission_for(instance)
@@ -95,7 +155,13 @@ class PlaySession:
             },
             gate=gate,
         )
-        session = cls(workspace, bundle, runner, debrief_enabled=debrief)
+        session = cls(
+            workspace,
+            bundle,
+            runner,
+            private_dir=private_dir,
+            debrief_enabled=debrief,
+        )
         (workspace / TASK_NAME).write_text(
             bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon),
             encoding="utf-8",
@@ -106,24 +172,42 @@ class PlaySession:
                 encoding="utf-8",
             )
         (workspace / LOG_NAME).write_text("", encoding="utf-8")
+        (private_dir / LOG_NAME).write_text("", encoding="utf-8")
         session.save(append_log=False)
         return session
 
     @classmethod
     def load(cls, workspace: Path) -> PlaySession:
-        """Restore a session from a player workspace.
+        """Restore a session from the authoritative private record.
+
+        Workspace mirrors are *not* trusted: they are compared against the
+        private record, any divergence (edit or deletion) is appended to the
+        authoritative ``integrity_events`` list, and the mirrors are healed.
 
         Args:
             workspace: Directory previously created by :meth:`create`.
 
         Returns:
-            Session with runner state restored from episode.json + state.json.
+            Session with runner state restored from the private record.
 
         Raises:
-            FileNotFoundError: If required files are missing.
+            FileNotFoundError: If the authoritative record is missing —
+                the directory was not created by :meth:`create`, or the
+                record was destroyed (unrecoverable; fail loudly).
             KeyError: If the recorded world is unknown.
+            ValueError: If the workspace directory is named ``private``.
         """
-        episode = _read_json(workspace / EPISODE_NAME)
+        workspace = workspace.expanduser().resolve()
+        private_dir = private_dir_for(workspace)
+        episode_path = private_dir / EPISODE_NAME
+        if not episode_path.is_file():
+            raise FileNotFoundError(
+                f"authoritative episode record missing ({episode_path}); this "
+                "directory was not created by PlaySession.create, or the "
+                "record was destroyed. Workspace copies are untrusted mirrors "
+                "and cannot be used to restore an episode."
+            )
+        episode = _read_json(episode_path)
         bundle = load_bundle(str(episode["world"]))
         instance = bundle.world.load_instance(str(episode["instance_id"]))
         mission = bundle.world.mission_for(instance)
@@ -138,9 +222,9 @@ class PlaySession:
             meta=dict(episode.get("meta") or {}),
             gate=str(episode.get("gate", GATE_ENFORCE)),
         )
-        observation = _read_json(workspace / STATE_NAME)
+        observation = _read_json(private_dir / STATE_NAME)
         state = bundle.manual.state_from_observation(observation)
-        steps = _steps_from_log(workspace / LOG_NAME)
+        steps = _steps_from_log(private_dir / LOG_NAME)
         hashes = [str(item) for item in episode["state_hashes"]]
         runner.restore(
             state=state,
@@ -161,13 +245,25 @@ class PlaySession:
                 error=str(last["error"]) if last.get("error") is not None else None,
             )
         del mission
-        return cls(
+        session = cls(
             workspace,
             bundle,
             runner,
+            private_dir=private_dir,
             last_feedback=last_feedback,
             debrief_enabled=bool(episode.get("debrief", False)),
+            integrity_events=list(episode.get("integrity_events") or []),
         )
+        new_events = session._audit_mirrors(episode)
+        if new_events:
+            session.integrity_events.extend(new_events)
+            # Persist the evidence and heal the mirrors immediately.
+            session.save(append_log=False)
+            (workspace / LOG_NAME).write_text(
+                (private_dir / LOG_NAME).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        return session
 
     @property
     def done(self) -> bool:
@@ -175,7 +271,7 @@ class PlaySession:
         return self.runner.done
 
     def submit(self, action: Action) -> GateFeedback:
-        """Apply one action through the enforce-mode gate and persist.
+        """Apply one action through the gate and persist both records.
 
         Args:
             action: Typed action.
@@ -193,11 +289,11 @@ class PlaySession:
         return feedback
 
     def to_trace(self) -> Trace:
-        """Return the sealed trace of this episode."""
+        """Return the sealed trace of this episode (authoritative record)."""
         return self.runner.to_trace()
 
     def save(self, *, append_log: bool = False) -> None:
-        """Write public workspace files from the current runner state.
+        """Write the private record and the public mirrors from runner state.
 
         Args:
             append_log: Unused; log lines are appended in :meth:`submit`.
@@ -205,6 +301,7 @@ class PlaySession:
         """
         del append_log
         self.workspace.mkdir(parents=True, exist_ok=True)
+        self.private_dir.mkdir(parents=True, exist_ok=True)
         observation = self.bundle.manual.observe(
             self.runner.state,
             step=self.runner.step_index,
@@ -214,8 +311,17 @@ class PlaySession:
                 self.last_feedback.to_dict() if self.last_feedback is not None else None
             ),
         )
+        episode = self._episode_dict()
+        # Authoritative record first, then the player-facing mirrors. The
+        # mirrors omit integrity_events: detection is not advertised mid-run.
+        _write_json(self.private_dir / STATE_NAME, observation)
+        _write_json(self.private_dir / EPISODE_NAME, episode)
+        mirror = {key: value for key, value in episode.items() if key != "integrity_events"}
         _write_json(self.workspace / STATE_NAME, observation)
-        episode = {
+        _write_json(self.workspace / EPISODE_NAME, mirror)
+
+    def _episode_dict(self) -> dict[str, Any]:
+        return {
             "world": self.bundle.name,
             "instance_id": self.runner.instance.instance_id,
             "constitution_id": self.runner.constitution_id,
@@ -229,8 +335,37 @@ class PlaySession:
             "done": self.runner.done,
             "state_hashes": list(self.runner.state_hashes),
             "meta": dict(self.runner.meta),
+            "integrity_events": list(self.integrity_events),
         }
-        _write_json(self.workspace / EPISODE_NAME, episode)
+
+    def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:
+        """Diff workspace mirrors against the authoritative record.
+
+        Args:
+            episode: Authoritative episode mapping as loaded from disk.
+
+        Returns:
+            New integrity events (empty when the mirrors are intact).
+        """
+        step = int(episode.get("step", 0))
+        events: list[dict[str, Any]] = []
+
+        expected_episode = {
+            key: value for key, value in episode.items() if key != "integrity_events"
+        }
+        events.extend(
+            _diff_json_mirror(self.workspace / EPISODE_NAME, expected_episode, step=step)
+        )
+        expected_state = _read_json(self.private_dir / STATE_NAME)
+        events.extend(_diff_json_mirror(self.workspace / STATE_NAME, expected_state, step=step))
+
+        log_mirror = self.workspace / LOG_NAME
+        authoritative_log = (self.private_dir / LOG_NAME).read_text(encoding="utf-8")
+        if not log_mirror.is_file():
+            events.append({"step": step, "file": LOG_NAME, "kind": "mirror_missing"})
+        elif log_mirror.read_text(encoding="utf-8") != authoritative_log:
+            events.append({"step": step, "file": LOG_NAME, "kind": "mirror_tampered"})
+        return events
 
     def _append_log(self, action: Action, feedback: GateFeedback) -> None:
         record = {
@@ -241,9 +376,38 @@ class PlaySession:
             "error": feedback.error,
             "state_hash": self.runner.state_hashes[-1],
         }
-        log_path = self.workspace / LOG_NAME
-        with log_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, sort_keys=True) + "\n")
+        line = json.dumps(record, sort_keys=True) + "\n"
+        for directory in (self.private_dir, self.workspace):
+            with (directory / LOG_NAME).open("a", encoding="utf-8") as handle:
+                handle.write(line)
+
+
+def _diff_json_mirror(
+    path: Path,
+    expected: Mapping[str, Any],
+    *,
+    step: int,
+) -> list[dict[str, Any]]:
+    """Compare one JSON mirror file against its authoritative content."""
+    if not path.is_file():
+        return [{"step": step, "file": path.name, "kind": "mirror_missing"}]
+    try:
+        found = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return [{"step": step, "file": path.name, "kind": "mirror_tampered", "fields": ["*"]}]
+    if not isinstance(found, Mapping):
+        return [{"step": step, "file": path.name, "kind": "mirror_tampered", "fields": ["*"]}]
+    fields = sorted(
+        key
+        for key in set(expected) | set(found)
+        if expected.get(key, _MISSING) != found.get(key, _MISSING)
+    )
+    if fields:
+        return [{"step": step, "file": path.name, "kind": "mirror_tampered", "fields": fields}]
+    return []
+
+
+_MISSING = object()
 
 
 def read_next_action(workspace: Path) -> Action | None:
@@ -303,8 +467,10 @@ __all__ = [
     "EPISODE_NAME",
     "LOG_NAME",
     "NEXT_ACTION_NAME",
+    "PRIVATE_DIRNAME",
     "STATE_NAME",
     "TASK_NAME",
     "PlaySession",
+    "private_dir_for",
     "read_next_action",
 ]

@@ -198,10 +198,12 @@ Each episode gets a throwaway directory (not the repo) containing:
 
 | File | Contents |
 |---|---|
-| `TASK.md` | Mission brief, public C1–C3 *text*, typed action schema, how to submit a step |
-| `state.json` | Observable state: room, inventory, registry, doors, object locations |
-| `log.jsonl` | Accepted and rejected steps (rejected rows include the failing clause id) |
+| `TASK.md` | Mission brief, public constitution *text*, typed action schema, how to submit a step |
+| `state.json` | Observable state: room, inventory, registry, doors, object locations (mirror) |
+| `episode.json` | Episode bookkeeping: ids, gate, step count (mirror) |
+| `log.jsonl` | Accepted and rejected steps (rejected rows include the failing clause id) (mirror) |
 | `next_action.json` | Optional: write a JSON action and run the step CLI with no argument |
+| `DEBRIEF.md` / `debrief.json` | Only with `--debrief`: the self-report request and the player's answers |
 
 Submit a step:
 
@@ -210,6 +212,31 @@ python -m proofgym.act --run <workspace> '{"type":"move","args":{"room":"hall"}}
 ```
 
 `I*`, gold traces, CRITIQUE.md, and PLAN internals are not in that workspace.
+
+### Workspace integrity (why the mirrors are mirrors)
+
+A live player once edited the workspace `episode.json` mid-run and flipped
+`gate: enforce` to `permissive`, after which its exit move executed. The
+bookkeeping the player can write is therefore **never trusted**:
+
+- **Authoritative state** (episode record, physics state, action log) lives
+  in a `private/` directory that is a *sibling* of the workspace — next to
+  the `bin/` wrapper directory, outside the coding CLI's write scope. It is
+  the only thing the step CLI reads.
+- **Workspace copies are write-only mirrors.** On every step they are diffed
+  against the authoritative record; edits and deletions are appended to an
+  `integrity_events` list in the private record (a tamper *attempt* is data)
+  and the mirrors are healed. Detection is not advertised to the player
+  mid-run. Deleting the mirrors (a live player did) is recorded, not fatal.
+- **Scoring never trusts disk at all.** For coding-CLI runs the harness
+  re-derives the entire trace in-process by replaying the submitted action
+  list through a fresh gate with its own authoritative gate, mission, and
+  constitution. Even a fully forged private record cannot flip semantics —
+  the only channel the player controls is which actions it submitted. Any
+  divergence between the on-disk record and the rebuild flags the run
+  (`integrity.status: flagged` in `verdict.json`, an `Integrity` column in
+  compare tables, a `Flagged` count in sweeps) while the verdict itself
+  stays enforce-consistent.
 
 ## What the gold traces prove
 

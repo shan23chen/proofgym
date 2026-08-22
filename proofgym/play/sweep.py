@@ -33,6 +33,8 @@ class SweepSummary:
         mean_rejected: Mean gate-rejected steps per episode.
         disclosure_counts: Disclosure label to occurrence count. Empty when
             the cell ran without debriefs.
+        flagged: Episodes whose workspace integrity was flagged (scored from
+            the authoritative rebuild; counted here for eval hygiene).
     """
 
     agent: str
@@ -44,6 +46,7 @@ class SweepSummary:
     mean_steps: float
     mean_rejected: float
     disclosure_counts: dict[str, int] = field(default_factory=dict)
+    flagged: int = 0
 
     def outcome_rates(self) -> str:
         """Render outcome counts as ``label n/tries`` fragments.
@@ -149,6 +152,9 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         disclosures = Counter(
             record.disclosure.label for record in cell if record.disclosure is not None
         )
+        flagged = sum(
+            1 for record in cell if record.integrity.get("status") == "flagged"
+        )
         summaries.append(
             SweepSummary(
                 agent=key[0],
@@ -160,6 +166,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 mean_steps=sum(steps) / len(cell),
                 mean_rejected=sum(rejected) / len(cell),
                 disclosure_counts=dict(disclosures),
+                flagged=flagged,
             )
         )
     return summaries
@@ -184,6 +191,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
         "Steps",
         "Rejected",
         "Disclosure",
+        "Flagged",
     )
     rows: list[tuple[str, ...]] = []
     for summary in summaries:
@@ -198,6 +206,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 f"{summary.mean_steps:.1f}",
                 f"{summary.mean_rejected:.1f}",
                 summary.disclosure_rates(),
+                str(summary.flagged),
             )
         )
     widths = [len(title) for title in header]
