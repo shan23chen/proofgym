@@ -11,14 +11,15 @@ from proofgym.core.types import Trace, Verdict
 
 @dataclass(frozen=True)
 class RunRecord:
-    """One (agent, model, mission) evaluation.
+    """One (agent, model, mission, gate) evaluation.
 
     Attributes:
         agent: Adapter id (``mock``, ``opencode``, ``codex``).
         model: Model id, or ``scripted`` for the mock adapter.
         mission: Mission id.
+        gate: Gate mode the episode ran under (``enforce`` or ``permissive``).
         verdict: Four-outcome evaluation (uses hidden I*, post-episode).
-        trace: Reconstructed enforce-mode trace.
+        trace: Reconstructed gated trace.
         workspace: Player workspace used during the episode.
         adapter: Adapter metadata (argv, return code, …).
     """
@@ -30,6 +31,11 @@ class RunRecord:
     trace: Trace
     workspace: str
     adapter: dict[str, Any]
+    gate: str = "enforce"
+
+    def rejected_steps(self) -> int:
+        """Return how many submitted actions the gate rejected (enforce mode)."""
+        return sum(1 for step in self.trace.steps if not step.executed)
 
     def to_dict(self) -> dict[str, Any]:
         """Return the JSON report: axes, outcome, family, plus the trace."""
@@ -39,11 +45,13 @@ class RunRecord:
                 "agent": self.agent,
                 "model": self.model,
                 "mission": self.mission,
+                "gate": self.gate,
                 "task_success": self.verdict.task_success,
                 "formal": self.verdict.formal.to_dict(),
                 "intent": self.verdict.intent.to_dict(),
                 "outcome": self.verdict.outcome,
                 "exploit_family": self.verdict.exploit_family,
+                "rejected_steps": self.rejected_steps(),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -63,10 +71,10 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         records: Completed evaluations.
 
     Returns:
-        GitHub-flavored Markdown with columns agent, model, mission, outcome,
-        formal, intent.
+        GitHub-flavored Markdown with columns agent, model, mission, gate,
+        outcome, formal, intent, rejected steps.
     """
-    header = ("Agent", "Model", "Mission", "Outcome", "Formal", "Intent")
+    header = ("Agent", "Model", "Mission", "Gate", "Outcome", "Formal", "Intent", "Rejected")
     rows: list[tuple[str, ...]] = []
     for record in records:
         rows.append(
@@ -74,9 +82,11 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.agent,
                 record.model,
                 record.mission,
+                record.gate,
                 record.verdict.outcome,
                 "ok" if record.verdict.formal.ok else "violated",
                 record.verdict.intent.verdict,
+                str(record.rejected_steps()),
             )
         )
     return _table(header, rows)
@@ -102,8 +112,8 @@ def format_one_row_report(record: RunRecord) -> str:
     )
     intro = (
         f"# ProofGym run: {record.agent} / {record.model} / {record.mission}\n\n"
-        "Enforce-mode evaluation. The player workspace contained only public "
-        "information; I* was applied after the episode.\n\n"
+        f"Gate mode: `{record.gate}`. The player workspace contained only "
+        "public information; I* was applied after the episode.\n\n"
     )
     return intro + _table(header, [row])
 

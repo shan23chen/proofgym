@@ -279,14 +279,16 @@ class IntentVerdict:
 
 @dataclass(frozen=True)
 class GateFeedback:
-    """Enforce-mode gate result for one submitted action (O1).
+    """Gate result for one submitted action (O1).
 
     Attributes:
-        executed: True when the action passed the constitution and physics ran.
-        failing_clause_id: First failing clause id when rejected. ``None`` if
-            the action was accepted, or if the rejection was not a clause
-            failure (unknown type, bad arguments).
-        clause_results: Per-clause results for the would-be transition.
+        executed: True when physics ran. In enforce mode this implies the
+            constitution held; in permissive gate mode an illegal action still
+            executes, with the violation reported below.
+        failing_clause_id: First failing clause id, or ``None`` if every
+            clause held (also ``None`` when the rejection was not a clause
+            failure — unknown type, bad arguments).
+        clause_results: Per-clause results for the transition.
         error: Engine or parse error, if any.
     """
 

@@ -37,20 +37,24 @@ def run_episode(
     out_dir: Path,
     live_root: Path | None = None,
     timeout: float | None = None,
+    gate: str = "enforce",
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
     Args:
         agent: ``mock``, ``opencode``, or ``codex``.
-        mission: ``errand`` or ``heist``.
+        mission: ``errand``, ``heist``, or ``heist_patched``.
         model: Required for coding CLIs. Defaults to ``scripted`` for mock.
-        script: Mock script id (default: honest_errand / registry_heist).
+        script: Mock script id (default per mission, see adapters).
         world_name: Catalog world.
         out_dir: Where to write verdict.json, trace.json, and the report.
         live_root: Directory for the isolated live workspace. Created with
             ``tempfile.mkdtemp`` when omitted so a coding CLI is never started
             in the repo.
         timeout: Subprocess timeout for coding CLIs.
+        gate: ``enforce`` (default) or ``permissive``. Under enforce, illegal
+            actions are rejected and ``illegal_shortcut`` is unreachable;
+            permissive executes them and records the violation.
 
     Returns:
         Completed run record.
@@ -58,6 +62,7 @@ def run_episode(
     Raises:
         AdapterNotInstalledError: If a coding CLI is missing from PATH.
         KeyError: If the agent, world, mission, or script is unknown.
+        ValueError: If a required model is missing or the gate is unknown.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -76,6 +81,7 @@ def run_episode(
         world_name=world_name,
         mission_id=mission,
         meta=meta,
+        gate=gate,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -106,13 +112,16 @@ def run_episode(
 
     bundle = load_bundle(world_name)
     trace = session.to_trace()
+    instance = bundle.world.load_instance(trace.instance_id)
+    constitution, _ = bundle.constitution_for_instance(instance)
     # Evaluation uses hidden I* in *this* process, never in the workspace.
-    verdict = evaluate(bundle.world, bundle.constitution, bundle.intent, trace)
+    verdict = evaluate(bundle.world, constitution, bundle.intent, trace)
     verdict = replace(verdict, trace=str(trace.meta.get("agent_id") or verdict.trace))
     record = RunRecord(
         agent=agent,
         model=model_id,
         mission=mission,
+        gate=gate,
         verdict=verdict,
         trace=trace,
         workspace=str(workspace.resolve()),
@@ -185,6 +194,7 @@ def load_run_record(path: Path) -> RunRecord:
         agent=str(payload["agent"]),
         model=str(payload["model"]),
         mission=str(payload["mission"]),
+        gate=str(payload.get("gate", "enforce")),
         verdict=verdict,
         trace=trace,
         workspace=str(payload.get("workspace") or ""),
