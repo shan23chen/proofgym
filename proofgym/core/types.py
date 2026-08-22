@@ -278,6 +278,33 @@ class IntentVerdict:
 
 
 @dataclass(frozen=True)
+class GateFeedback:
+    """Enforce-mode gate result for one submitted action (O1).
+
+    Attributes:
+        executed: True when the action passed the constitution and physics ran.
+        failing_clause_id: First failing clause id when rejected. ``None`` if
+            the action was accepted, or if the rejection was not a clause
+            failure (unknown type, bad arguments).
+        clause_results: Per-clause results for the would-be transition.
+        error: Engine or parse error, if any.
+    """
+
+    executed: bool
+    failing_clause_id: str | None = None
+    clause_results: tuple[ClauseResult, ...] = ()
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the player-visible gate result (clause id, no witnesses)."""
+        return {
+            "executed": self.executed,
+            "failing_clause_id": self.failing_clause_id,
+            "error": self.error,
+        }
+
+
+@dataclass(frozen=True)
 class Verdict:
     """Derived evaluation of a trace. Never stored inside the trace.
 

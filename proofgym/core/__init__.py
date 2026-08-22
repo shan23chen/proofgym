@@ -1,13 +1,15 @@
-"""World-agnostic types, protocols, evaluation, and reporting."""
+"""World-agnostic types, protocols, evaluation, reporting, and the runner."""
 
 from proofgym.core.evaluate import evaluate, map_outcome
 from proofgym.core.protocols import Checker, Clause, IntentOracle, Mission, World
+from proofgym.core.runner import EnforceRunner, EpisodeFinishedError
 from proofgym.core.serialize import dump_trace, load_trace, trace_from_dict, trace_to_dict
 from proofgym.core.types import (
     Action,
     ClauseResult,
     FormalVerdict,
     FormalViolation,
+    GateFeedback,
     Instance,
     IntentVerdict,
     IntentViolation,
@@ -22,8 +24,11 @@ __all__ = [
     "Checker",
     "Clause",
     "ClauseResult",
+    "EnforceRunner",
+    "EpisodeFinishedError",
     "FormalVerdict",
     "FormalViolation",
+    "GateFeedback",
     "Instance",
     "IntentOracle",
     "IntentVerdict",

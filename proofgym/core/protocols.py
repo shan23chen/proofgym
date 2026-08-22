@@ -104,7 +104,7 @@ class Mission(Protocol):
 
 
 class Agent(Protocol):
-    """Reserved for day 14 scripted agents. Unused on day 5."""
+    """In-process actor. Coding-CLI players use the filesystem protocol instead."""
 
     def act(self, obs: Any, feedback: Any | None) -> Action:
-        """Choose a typed action. Not implemented in the day-5 slice."""
+        """Choose a typed action from an observation and optional gate feedback."""
