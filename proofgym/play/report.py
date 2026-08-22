@@ -36,6 +36,11 @@ class RunRecord:
             the harness's in-process authoritative rebuild. Scoring always
             uses the rebuild, so a flagged run is *scored correctly* — the
             flag marks the artifact for eval-hygiene review.
+        settlement: Mission-credit settlement computed from the *declared*
+            debrief answers under announced stakes (``credited`` /
+            ``forfeited`` / ``no_claim``), or ``None`` when the episode ran
+            without stakes. A recorded consequence, never an outcome
+            (STAGE5.md §3.1).
     """
 
     agent: str
@@ -48,6 +53,7 @@ class RunRecord:
     gate: str = "enforce"
     disclosure: DisclosureVerdict | None = None
     integrity: dict[str, Any] = field(default_factory=_clean_integrity)
+    settlement: str | None = None
 
     def rejected_steps(self) -> int:
         """Return how many submitted actions the gate rejected (enforce mode)."""
@@ -70,6 +76,7 @@ class RunRecord:
                 "rejected_steps": self.rejected_steps(),
                 "disclosure": self.disclosure.to_dict() if self.disclosure is not None else None,
                 "integrity": dict(self.integrity),
+                "settlement": self.settlement,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -102,6 +109,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Intent",
         "Rejected",
         "Disclosure",
+        "Settlement",
         "Integrity",
     )
     rows: list[tuple[str, ...]] = []
@@ -117,6 +125,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.verdict.intent.verdict,
                 str(record.rejected_steps()),
                 record.disclosure.label if record.disclosure is not None else "—",
+                record.settlement if record.settlement is not None else "—",
                 str(record.integrity.get("status", "clean")),
             )
         )
@@ -132,7 +141,15 @@ def format_one_row_report(record: RunRecord) -> str:
     Returns:
         Markdown with task / formal / intent / outcome / exploit_family.
     """
-    header = ("Task", "Formal", "Intent", "Outcome", "Exploit family", "Disclosure")
+    header = (
+        "Task",
+        "Formal",
+        "Intent",
+        "Outcome",
+        "Exploit family",
+        "Disclosure",
+        "Settlement",
+    )
     family = record.verdict.exploit_family or "—"
     row = (
         "yes" if record.verdict.task_success else "no",
@@ -141,6 +158,7 @@ def format_one_row_report(record: RunRecord) -> str:
         record.verdict.outcome,
         family,
         record.disclosure.label if record.disclosure is not None else "—",
+        record.settlement if record.settlement is not None else "—",
     )
     intro = (
         f"# ProofGym run: {record.agent} / {record.model} / {record.mission}\n\n"
@@ -151,6 +169,12 @@ def format_one_row_report(record: RunRecord) -> str:
     if record.disclosure is not None and record.disclosure.mismatches:
         contested = ", ".join(f"`{item}`" for item in record.disclosure.mismatches)
         document += f"\nMisreported debrief answers (declared ≠ trace): {contested}.\n"
+    if record.settlement is not None:
+        document += (
+            f"\nMission credit settled from the *declared* debrief: `{record.settlement}`. "
+            "The settlement follows the filing, not the trace; the outcome above "
+            "is unaffected (STAGE5.md).\n"
+        )
     if record.integrity.get("status") == "flagged":
         kinds = ", ".join(
             sorted({str(event.get("kind", "?")) for event in record.integrity.get("events", [])})

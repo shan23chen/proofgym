@@ -22,7 +22,12 @@ from proofgym.play.adapters import (
     script_actions,
     write_act_wrapper,
 )
-from proofgym.play.debrief import DisclosureVerdict, read_debrief_answers, score_debrief
+from proofgym.play.debrief import (
+    DisclosureVerdict,
+    read_debrief_answers,
+    score_debrief,
+    settle_debrief,
+)
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession
@@ -45,6 +50,7 @@ def run_episode(
     debrief: bool = False,
     debrief_policy: str | None = None,
     debrief_version: int = 1,
+    debrief_stakes: bool = False,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -72,6 +78,11 @@ def run_episode(
             (default) is the sealed stage-3 instrument; ``2`` is the
             rejection/alarm split. Requires ``debrief`` when non-default;
             never pool disclosure labels across versions.
+        debrief_stakes: When True, DEBRIEF.md announces the mission-credit
+            settlement rule and the harness records the settlement computed
+            from the *declared* answers (STAGE5.md §3.1). Requires
+            ``debrief`` and ``debrief_version=2``. The settlement never
+            changes the verdict or the outcome label.
 
     Returns:
         Completed run record.
@@ -80,8 +91,9 @@ def run_episode(
         AdapterNotInstalledError: If a coding CLI is missing from PATH.
         KeyError: If the agent, world, mission, or script is unknown.
         ValueError: If a required model is missing, the gate is unknown, a
-            debrief policy is passed for a non-mock agent, or a non-default
-            debrief version is requested without a debrief.
+            debrief policy is passed for a non-mock agent, a non-default
+            debrief version is requested without a debrief, or stakes are
+            requested without a debrief / with the v1 questionnaire.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -91,6 +103,13 @@ def run_episode(
         raise ValueError("--debrief-policy is a mock-only control; live players answer freely")
     if debrief_version != 1 and not debrief:
         raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
+    if debrief_stakes and not debrief:
+        raise ValueError("--debrief-stakes requires --debrief (stakes with no filing to settle)")
+    if debrief_stakes and debrief_version != 2:
+        raise ValueError(
+            "--debrief-stakes requires --debrief-version 2; stakes data must never "
+            "be confounded with the instrument stage 4 invalidated"
+        )
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
 
@@ -109,6 +128,7 @@ def run_episode(
         gate=gate,
         debrief=debrief,
         debrief_version=debrief_version,
+        debrief_stakes=debrief_stakes,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -169,6 +189,18 @@ def run_episode(
     verdict = evaluate(bundle.world, constitution, bundle.intent, trace)
     verdict = replace(verdict, trace=str(trace.meta.get("agent_id") or verdict.trace))
     disclosure = _score_disclosure(bundle, trace, workspace) if debrief else None
+    # The settlement rewards the declaration; the disclosure verdict convicts
+    # it. Keeping the two separate — and both out of the outcome mapping — is
+    # the stage-5 design (STAGE5.md §3.1).
+    settlement = (
+        settle_debrief(
+            task_success=verdict.task_success,
+            declared=disclosure.declared if disclosure is not None else None,
+            stake_question_id=bundle.debrief.stake_question_id(),
+        )
+        if debrief_stakes
+        else None
+    )
     record = RunRecord(
         agent=agent,
         model=model_id,
@@ -180,6 +212,7 @@ def run_episode(
         adapter=adapter_meta,
         disclosure=disclosure,
         integrity=integrity,
+        settlement=settlement,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
@@ -354,6 +387,7 @@ def load_run_record(path: Path) -> RunRecord:
         if isinstance(integrity_raw, Mapping)
         else {"status": "clean", "events": []}
     )
+    settlement_raw = payload.get("settlement")
     return RunRecord(
         agent=str(payload["agent"]),
         model=str(payload["model"]),
@@ -365,6 +399,7 @@ def load_run_record(path: Path) -> RunRecord:
         adapter=dict(payload.get("adapter") or {}),
         disclosure=disclosure,
         integrity=integrity,
+        settlement=str(settlement_raw) if settlement_raw is not None else None,
     )
 
 

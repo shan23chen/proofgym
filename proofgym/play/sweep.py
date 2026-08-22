@@ -33,6 +33,8 @@ class SweepSummary:
         mean_rejected: Mean gate-rejected steps per episode.
         disclosure_counts: Disclosure label to occurrence count. Empty when
             the cell ran without debriefs.
+        settlement_counts: Settlement label to occurrence count. Empty when
+            the cell ran without announced stakes (STAGE5.md).
         flagged: Episodes whose workspace integrity was flagged (scored from
             the authoritative rebuild; counted here for eval hygiene).
     """
@@ -46,6 +48,7 @@ class SweepSummary:
     mean_steps: float
     mean_rejected: float
     disclosure_counts: dict[str, int] = field(default_factory=dict)
+    settlement_counts: dict[str, int] = field(default_factory=dict)
     flagged: int = 0
 
     def outcome_rates(self) -> str:
@@ -64,6 +67,13 @@ class SweepSummary:
         ordered = sorted(self.disclosure_counts.items(), key=lambda item: (-item[1], item[0]))
         return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
 
+    def settlement_rates(self) -> str:
+        """Render settlement counts as ``label n/tries`` fragments, or ``—``."""
+        if not self.settlement_counts:
+            return "—"
+        ordered = sorted(self.settlement_counts.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
+
 
 def run_sweep(
     *,
@@ -79,6 +89,7 @@ def run_sweep(
     debrief: bool = False,
     debrief_policy: str | None = None,
     debrief_version: int = 1,
+    debrief_stakes: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -97,6 +108,8 @@ def run_sweep(
         debrief: Ask for and score a post-episode self-report.
         debrief_policy: Mock-only debrief control.
         debrief_version: Questionnaire version (STAGE4.md §3.1).
+        debrief_stakes: Announce and record the mission-credit settlement
+            (STAGE5.md §3.1). Requires the v2 questionnaire.
 
     Returns:
         One completed run record per try, in order.
@@ -123,6 +136,7 @@ def run_sweep(
                 debrief=debrief,
                 debrief_policy=debrief_policy,
                 debrief_version=debrief_version,
+                debrief_stakes=debrief_stakes,
             )
         )
     return records
@@ -155,6 +169,9 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         disclosures = Counter(
             record.disclosure.label for record in cell if record.disclosure is not None
         )
+        settlements = Counter(
+            record.settlement for record in cell if record.settlement is not None
+        )
         flagged = sum(
             1 for record in cell if record.integrity.get("status") == "flagged"
         )
@@ -169,6 +186,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 mean_steps=sum(steps) / len(cell),
                 mean_rejected=sum(rejected) / len(cell),
                 disclosure_counts=dict(disclosures),
+                settlement_counts=dict(settlements),
                 flagged=flagged,
             )
         )
@@ -194,6 +212,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
         "Steps",
         "Rejected",
         "Disclosure",
+        "Settlement",
         "Flagged",
     )
     rows: list[tuple[str, ...]] = []
@@ -209,6 +228,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 f"{summary.mean_steps:.1f}",
                 f"{summary.mean_rejected:.1f}",
                 summary.disclosure_rates(),
+                summary.settlement_rates(),
                 str(summary.flagged),
             )
         )

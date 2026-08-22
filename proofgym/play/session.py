@@ -91,6 +91,7 @@ class PlaySession:
         last_feedback: GateFeedback | None = None,
         debrief_enabled: bool = False,
         debrief_version: int = 1,
+        debrief_stakes: bool = False,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -100,6 +101,7 @@ class PlaySession:
         self.last_feedback = last_feedback
         self.debrief_enabled = debrief_enabled
         self.debrief_version = debrief_version
+        self.debrief_stakes = debrief_stakes
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -113,6 +115,7 @@ class PlaySession:
         gate: str = GATE_ENFORCE,
         debrief: bool = False,
         debrief_version: int = 1,
+        debrief_stakes: bool = False,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -133,14 +136,26 @@ class PlaySession:
                 (default) is the sealed stage-3 instrument; ``2`` is the
                 rejection/alarm split. Recorded in the authoritative record
                 only when non-default, so v1 workspaces stay byte-identical.
+            debrief_stakes: When True, DEBRIEF.md additionally announces the
+                mission-credit settlement rule (STAGE5.md §3.1). Requires
+                ``debrief`` and the validated v2 questionnaire. Recorded in
+                the authoritative record only when True.
 
         Returns:
             Initialized session with public files and the private record written.
 
         Raises:
-            ValueError: If the workspace directory is named ``private`` or
-                the debrief version is unknown.
+            ValueError: If the workspace directory is named ``private``, the
+                debrief version is unknown, or stakes are requested without a
+                debrief / with the invalidated v1 questionnaire.
         """
+        if debrief_stakes and not debrief:
+            raise ValueError("debrief_stakes requires a debrief (stakes with no filing to settle)")
+        if debrief_stakes and debrief_version != 2:
+            raise ValueError(
+                "debrief_stakes requires the validated v2 questionnaire; stakes data "
+                "must never be confounded with the instrument stage 4 invalidated"
+            )
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
         private_dir.mkdir(parents=True, exist_ok=True)
@@ -171,6 +186,7 @@ class PlaySession:
             private_dir=private_dir,
             debrief_enabled=debrief,
             debrief_version=debrief_version,
+            debrief_stakes=debrief_stakes,
         )
         (workspace / TASK_NAME).write_text(
             bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon, gate=gate),
@@ -178,7 +194,12 @@ class PlaySession:
         )
         if debrief:
             (workspace / DEBRIEF_NAME).write_text(
-                render_debrief_markdown(bundle.debrief.questions()),
+                render_debrief_markdown(
+                    bundle.debrief.questions(),
+                    stake_question_id=(
+                        bundle.debrief.stake_question_id() if debrief_stakes else None
+                    ),
+                ),
                 encoding="utf-8",
             )
         (workspace / LOG_NAME).write_text("", encoding="utf-8")
@@ -264,6 +285,7 @@ class PlaySession:
             last_feedback=last_feedback,
             debrief_enabled=bool(episode.get("debrief", False)),
             debrief_version=debrief_version,
+            debrief_stakes=bool(episode.get("debrief_stakes", False)),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -353,6 +375,9 @@ class PlaySession:
         # stage-3-style v1 debrief records stay byte-identical (STAGE4.md).
         if self.debrief_enabled and self.debrief_version != 1:
             episode["debrief_version"] = self.debrief_version
+        # Absent means no stakes: recorded only when announced (STAGE5.md).
+        if self.debrief_enabled and self.debrief_stakes:
+            episode["debrief_stakes"] = True
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:
