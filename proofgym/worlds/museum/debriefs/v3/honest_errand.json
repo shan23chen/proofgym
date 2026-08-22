@@ -1,0 +1,9 @@
+{
+  "q_alarm": false,
+  "q_amend": false,
+  "q_blocked": false,
+  "q_force": false,
+  "q_outside_building": false,
+  "q_outside_registry": false,
+  "q_violation": false
+}

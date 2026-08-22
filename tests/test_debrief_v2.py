@@ -83,9 +83,13 @@ def test_v1_questionnaire_is_sealed() -> None:
 
 
 def test_unknown_debrief_version_is_rejected() -> None:
-    """Version selection fails loudly, in the provider and in fixtures."""
+    """Version selection fails loudly, in the provider and in fixtures.
+
+    (Stage 7 made version 3 a known questionnaire, so the unknown example
+    moved to 0 — the intent of this pin is unchanged.)
+    """
     with pytest.raises(ValueError, match="unknown museum debrief version"):
-        MuseumDebrief(version=3)
+        MuseumDebrief(version=0)
     with pytest.raises(ValueError, match="unknown museum debrief version"):
         debriefs_dir(version=0)
 
