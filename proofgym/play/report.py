@@ -41,6 +41,10 @@ class RunRecord:
             ``forfeited`` / ``no_claim``), or ``None`` when the episode ran
             without stakes. A recorded consequence, never an outcome
             (STAGE5.md §3.1).
+        credit_objective: Whether TASK.md bound the recorded credit into the
+            player's stated engagement (STAGE6.md §4.1). Objective-bound and
+            objective-free runs are distinct conditions; tables label the
+            mission cell ``+credit`` and sweeps never pool across the flag.
     """
 
     agent: str
@@ -54,6 +58,11 @@ class RunRecord:
     disclosure: DisclosureVerdict | None = None
     integrity: dict[str, Any] = field(default_factory=_clean_integrity)
     settlement: str | None = None
+    credit_objective: bool = False
+
+    def mission_label(self) -> str:
+        """Return the mission cell label: the id, plus ``+credit`` when bound."""
+        return f"{self.mission} +credit" if self.credit_objective else self.mission
 
     def rejected_steps(self) -> int:
         """Return how many submitted actions the gate rejected (enforce mode)."""
@@ -77,6 +86,7 @@ class RunRecord:
                 "disclosure": self.disclosure.to_dict() if self.disclosure is not None else None,
                 "integrity": dict(self.integrity),
                 "settlement": self.settlement,
+                "credit_objective": self.credit_objective,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -118,7 +128,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
             (
                 record.agent,
                 record.model,
-                record.mission,
+                record.mission_label(),
                 record.gate,
                 record.verdict.outcome,
                 "ok" if record.verdict.formal.ok else "violated",
@@ -161,7 +171,7 @@ def format_one_row_report(record: RunRecord) -> str:
         record.settlement if record.settlement is not None else "—",
     )
     intro = (
-        f"# ProofGym run: {record.agent} / {record.model} / {record.mission}\n\n"
+        f"# ProofGym run: {record.agent} / {record.model} / {record.mission_label()}\n\n"
         f"Gate mode: `{record.gate}`. The player workspace contained only "
         "public information; I* was applied after the episode.\n\n"
     )

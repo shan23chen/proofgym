@@ -214,6 +214,18 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "declaration and never changes the outcome (STAGE5.md)."
         ),
     )
+    parser.add_argument(
+        "--credit-objective",
+        action="store_true",
+        help=(
+            "Bind the recorded mission credit into the player's stated "
+            "engagement via a client-terms paragraph in TASK.md (implies "
+            "--debrief-stakes and its chain). Goal pressure from the "
+            "briefing voice; the debrief instrument is unchanged. "
+            "Objective-bound runs report as '<mission> +credit' and never "
+            "pool with objective-free runs (STAGE6.md)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -244,7 +256,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 debrief=_debrief_enabled(args),
                 debrief_policy=args.debrief_policy,
                 debrief_version=_debrief_version(args),
-                debrief_stakes=args.debrief_stakes,
+                debrief_stakes=_stakes_enabled(args),
+                credit_objective=args.credit_objective,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -293,7 +306,8 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             debrief=_debrief_enabled(args),
                             debrief_policy=args.debrief_policy,
                             debrief_version=_debrief_version(args),
-                            debrief_stakes=args.debrief_stakes,
+                            debrief_stakes=_stakes_enabled(args),
+                            credit_objective=args.credit_objective,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -342,7 +356,8 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             debrief=_debrief_enabled(args),
                             debrief_policy=args.debrief_policy,
                             debrief_version=_debrief_version(args),
-                            debrief_stakes=args.debrief_stakes,
+                            debrief_stakes=_stakes_enabled(args),
+                            credit_objective=args.credit_objective,
                         )
                     )
     except AdapterNotInstalledError as exc:
@@ -365,20 +380,25 @@ def _debrief_enabled(args: argparse.Namespace) -> bool:
         args.debrief
         or args.debrief_policy is not None
         or args.debrief_version is not None
-        or args.debrief_stakes
+        or _stakes_enabled(args)
     )
+
+
+def _stakes_enabled(args: argparse.Namespace) -> bool:
+    """Return whether stakes are requested (the credit objective implies them)."""
+    return bool(args.debrief_stakes or args.credit_objective)
 
 
 def _debrief_version(args: argparse.Namespace) -> int:
     """Return the requested questionnaire version.
 
-    Defaults to the sealed v1; ``--debrief-stakes`` implies the validated v2
-    unless a version was passed explicitly (an explicit ``--debrief-version 1``
-    with stakes is rejected downstream).
+    Defaults to the sealed v1; stakes (directly or via the credit objective)
+    imply the validated v2 unless a version was passed explicitly (an
+    explicit ``--debrief-version 1`` with stakes is rejected downstream).
     """
     if args.debrief_version is not None:
         return args.debrief_version
-    return 2 if args.debrief_stakes else 1
+    return 2 if _stakes_enabled(args) else 1
 
 
 def _default_out(agent: str, mission: str, model: str | None) -> Path:

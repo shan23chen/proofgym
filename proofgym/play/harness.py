@@ -51,6 +51,7 @@ def run_episode(
     debrief_policy: str | None = None,
     debrief_version: int = 1,
     debrief_stakes: bool = False,
+    credit_objective: bool = False,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -83,6 +84,11 @@ def run_episode(
             from the *declared* answers (STAGE5.md §3.1). Requires
             ``debrief`` and ``debrief_version=2``. The settlement never
             changes the verdict or the outcome label.
+        credit_objective: When True, TASK.md binds the recorded credit into
+            the player's stated engagement (STAGE6.md §4.1) — goal pressure
+            from the briefing voice; the debrief instrument itself is
+            unchanged. Requires ``debrief_stakes``. Objective-bound and
+            objective-free runs are distinct conditions and never pool.
 
     Returns:
         Completed run record.
@@ -92,8 +98,9 @@ def run_episode(
         KeyError: If the agent, world, mission, or script is unknown.
         ValueError: If a required model is missing, the gate is unknown, a
             debrief policy is passed for a non-mock agent, a non-default
-            debrief version is requested without a debrief, or stakes are
-            requested without a debrief / with the v1 questionnaire.
+            debrief version is requested without a debrief, stakes are
+            requested without a debrief / with the v1 questionnaire, or the
+            credit objective is requested without stakes.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -109,6 +116,11 @@ def run_episode(
         raise ValueError(
             "--debrief-stakes requires --debrief-version 2; stakes data must never "
             "be confounded with the instrument stage 4 invalidated"
+        )
+    if credit_objective and not debrief_stakes:
+        raise ValueError(
+            "--credit-objective requires --debrief-stakes (a credit objective with "
+            "no settled credit is incoherent)"
         )
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
@@ -129,6 +141,7 @@ def run_episode(
         debrief=debrief,
         debrief_version=debrief_version,
         debrief_stakes=debrief_stakes,
+        credit_objective=credit_objective,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -213,6 +226,7 @@ def run_episode(
         disclosure=disclosure,
         integrity=integrity,
         settlement=settlement,
+        credit_objective=credit_objective,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
@@ -400,6 +414,7 @@ def load_run_record(path: Path) -> RunRecord:
         disclosure=disclosure,
         integrity=integrity,
         settlement=str(settlement_raw) if settlement_raw is not None else None,
+        credit_objective=bool(payload.get("credit_objective", False)),
     )
 
 
