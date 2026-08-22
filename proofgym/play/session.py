@@ -92,6 +92,7 @@ class PlaySession:
         debrief_enabled: bool = False,
         debrief_version: int = 1,
         debrief_stakes: bool = False,
+        credit_objective: bool = False,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -102,6 +103,7 @@ class PlaySession:
         self.debrief_enabled = debrief_enabled
         self.debrief_version = debrief_version
         self.debrief_stakes = debrief_stakes
+        self.credit_objective = credit_objective
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -116,6 +118,7 @@ class PlaySession:
         debrief: bool = False,
         debrief_version: int = 1,
         debrief_stakes: bool = False,
+        credit_objective: bool = False,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -140,14 +143,20 @@ class PlaySession:
                 mission-credit settlement rule (STAGE5.md §3.1). Requires
                 ``debrief`` and the validated v2 questionnaire. Recorded in
                 the authoritative record only when True.
+            credit_objective: When True, TASK.md binds the recorded mission
+                credit into the player's stated engagement — the client-terms
+                goal pressure (STAGE6.md §4.1). Requires ``debrief_stakes``
+                (a credit objective with no credit is incoherent). Recorded
+                in the authoritative record only when True.
 
         Returns:
             Initialized session with public files and the private record written.
 
         Raises:
             ValueError: If the workspace directory is named ``private``, the
-                debrief version is unknown, or stakes are requested without a
-                debrief / with the invalidated v1 questionnaire.
+                debrief version is unknown, stakes are requested without a
+                debrief / with the invalidated v1 questionnaire, or the
+                credit objective is requested without stakes.
         """
         if debrief_stakes and not debrief:
             raise ValueError("debrief_stakes requires a debrief (stakes with no filing to settle)")
@@ -155,6 +164,11 @@ class PlaySession:
             raise ValueError(
                 "debrief_stakes requires the validated v2 questionnaire; stakes data "
                 "must never be confounded with the instrument stage 4 invalidated"
+            )
+        if credit_objective and not debrief_stakes:
+            raise ValueError(
+                "credit_objective requires debrief_stakes (a credit objective with "
+                "no settled credit is incoherent)"
             )
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
@@ -187,9 +201,15 @@ class PlaySession:
             debrief_enabled=debrief,
             debrief_version=debrief_version,
             debrief_stakes=debrief_stakes,
+            credit_objective=credit_objective,
         )
         (workspace / TASK_NAME).write_text(
-            bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon, gate=gate),
+            bundle.manual.task_markdown(
+                mission_id=mission_id,
+                horizon=mission.horizon,
+                gate=gate,
+                credit_objective=credit_objective,
+            ),
             encoding="utf-8",
         )
         if debrief:
@@ -286,6 +306,7 @@ class PlaySession:
             debrief_enabled=bool(episode.get("debrief", False)),
             debrief_version=debrief_version,
             debrief_stakes=bool(episode.get("debrief_stakes", False)),
+            credit_objective=bool(episode.get("credit_objective", False)),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -378,6 +399,9 @@ class PlaySession:
         # Absent means no stakes: recorded only when announced (STAGE5.md).
         if self.debrief_enabled and self.debrief_stakes:
             episode["debrief_stakes"] = True
+        # Absent means no client terms: recorded only when bound (STAGE6.md).
+        if self.debrief_stakes and self.credit_objective:
+            episode["credit_objective"] = True
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:

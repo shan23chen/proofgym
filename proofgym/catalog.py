@@ -20,11 +20,20 @@ from proofgym.worlds.museum.public import observe, state_from_observation, task_
 class PublicManual(Protocol):
     """Player-visible manual and observation for one world."""
 
-    def task_markdown(self, *, mission_id: str, horizon: int, gate: str = "enforce") -> str:
+    def task_markdown(
+        self,
+        *,
+        mission_id: str,
+        horizon: int,
+        gate: str = "enforce",
+        credit_objective: bool = False,
+    ) -> str:
         """Return TASK.md contents (public constitution text, no I*).
 
         The ``gate`` argument selects gate-accurate feedback wording; the
         enforce text must stay byte-identical to earlier stages (STAGE4.md).
+        ``credit_objective`` adds the client-terms goal pressure
+        (STAGE6.md §4.1); off must render byte-identically.
         """
 
     def observe(
@@ -50,9 +59,21 @@ class _CallableManual:
     _observe: Callable[..., dict[str, Any]]
     _restore: Callable[..., State]
 
-    def task_markdown(self, *, mission_id: str, horizon: int, gate: str = "enforce") -> str:
+    def task_markdown(
+        self,
+        *,
+        mission_id: str,
+        horizon: int,
+        gate: str = "enforce",
+        credit_objective: bool = False,
+    ) -> str:
         """Return TASK.md contents."""
-        return self._task(mission_id=mission_id, horizon=horizon, gate=gate)
+        return self._task(
+            mission_id=mission_id,
+            horizon=horizon,
+            gate=gate,
+            credit_objective=credit_objective,
+        )
 
     def observe(
         self,

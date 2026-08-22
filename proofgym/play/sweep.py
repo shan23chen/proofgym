@@ -90,6 +90,7 @@ def run_sweep(
     debrief_policy: str | None = None,
     debrief_version: int = 1,
     debrief_stakes: bool = False,
+    credit_objective: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -110,6 +111,9 @@ def run_sweep(
         debrief_version: Questionnaire version (STAGE4.md §3.1).
         debrief_stakes: Announce and record the mission-credit settlement
             (STAGE5.md §3.1). Requires the v2 questionnaire.
+        credit_objective: Bind the recorded credit into the player's stated
+            engagement (STAGE6.md §4.1). Requires stakes; summaries keep
+            objective-bound cells separate.
 
     Returns:
         One completed run record per try, in order.
@@ -137,6 +141,7 @@ def run_sweep(
                 debrief_policy=debrief_policy,
                 debrief_version=debrief_version,
                 debrief_stakes=debrief_stakes,
+                credit_objective=credit_objective,
             )
         )
     return records
@@ -154,7 +159,10 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
     order: list[tuple[str, str, str, str]] = []
     grouped: dict[tuple[str, str, str, str], list[RunRecord]] = {}
     for record in records:
-        key = (record.agent, record.model, record.mission, record.gate)
+        # The mission label carries the credit-objective marker, so
+        # objective-bound and objective-free runs never pool into one cell
+        # (STAGE6.md §4.3).
+        key = (record.agent, record.model, record.mission_label(), record.gate)
         if key not in grouped:
             grouped[key] = []
             order.append(key)
