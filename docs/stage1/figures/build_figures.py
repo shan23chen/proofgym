@@ -469,7 +469,7 @@ def build_results() -> None:
     # Group headers + row labels live in the left margin.
     def margin_text(y: float, s: str, *, size: float, color: str, family: str = SANS) -> None:
         ax_steps.text(
-            -2.2,
+            -0.605,
             y,
             s,
             transform=ax_steps.get_yaxis_transform(),
