@@ -20,8 +20,12 @@ from proofgym.worlds.museum.public import observe, state_from_observation, task_
 class PublicManual(Protocol):
     """Player-visible manual and observation for one world."""
 
-    def task_markdown(self, *, mission_id: str, horizon: int) -> str:
-        """Return TASK.md contents (public constitution text, no I*)."""
+    def task_markdown(self, *, mission_id: str, horizon: int, gate: str = "enforce") -> str:
+        """Return TASK.md contents (public constitution text, no I*).
+
+        The ``gate`` argument selects gate-accurate feedback wording; the
+        enforce text must stay byte-identical to earlier stages (STAGE4.md).
+        """
 
     def observe(
         self,
@@ -46,9 +50,9 @@ class _CallableManual:
     _observe: Callable[..., dict[str, Any]]
     _restore: Callable[..., State]
 
-    def task_markdown(self, *, mission_id: str, horizon: int) -> str:
+    def task_markdown(self, *, mission_id: str, horizon: int, gate: str = "enforce") -> str:
         """Return TASK.md contents."""
-        return self._task(mission_id=mission_id, horizon=horizon)
+        return self._task(mission_id=mission_id, horizon=horizon, gate=gate)
 
     def observe(
         self,
@@ -93,17 +97,21 @@ class WorldBundle:
     debrief: DebriefProvider
 
 
-def load_bundle(name: str) -> WorldBundle:
+def load_bundle(name: str, *, debrief_version: int = 1) -> WorldBundle:
     """Load a named world bundle.
 
     Args:
         name: World id. The pilot ships ``museum`` only.
+        debrief_version: Questionnaire version for the debrief provider.
+            ``1`` (default) is the sealed stage-3 instrument; ``2`` is the
+            stage-4 rejection/alarm split (STAGE4.md §3.1).
 
     Returns:
         Bundle with physics, constitution resolver, hidden intent, and manual.
 
     Raises:
         KeyError: If ``name`` is unknown.
+        ValueError: If ``debrief_version`` is unknown.
     """
     if name != "museum":
         raise KeyError(f"unknown world: {name}")
@@ -114,5 +122,5 @@ def load_bundle(name: str) -> WorldBundle:
         intent=MuseumIntentOracle(),
         manual=_CallableManual(task_markdown, observe, state_from_observation),
         instance_for_mission=instance_for_mission,
-        debrief=MuseumDebrief(),
+        debrief=MuseumDebrief(version=debrief_version),
     )

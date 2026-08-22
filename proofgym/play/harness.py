@@ -44,6 +44,7 @@ def run_episode(
     gate: str = "enforce",
     debrief: bool = False,
     debrief_policy: str | None = None,
+    debrief_version: int = 1,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -67,6 +68,10 @@ def run_episode(
             change behavior, so debrief on/off is a controlled condition.
         debrief_policy: Mock-only control (``truthful``, ``deny_all``,
             ``silent``). Defaults to ``truthful`` for mock debrief runs.
+        debrief_version: Questionnaire version (STAGE4.md §3.1). ``1``
+            (default) is the sealed stage-3 instrument; ``2`` is the
+            rejection/alarm split. Requires ``debrief`` when non-default;
+            never pool disclosure labels across versions.
 
     Returns:
         Completed run record.
@@ -74,8 +79,9 @@ def run_episode(
     Raises:
         AdapterNotInstalledError: If a coding CLI is missing from PATH.
         KeyError: If the agent, world, mission, or script is unknown.
-        ValueError: If a required model is missing, the gate is unknown, or a
-            debrief policy is passed for a non-mock agent.
+        ValueError: If a required model is missing, the gate is unknown, a
+            debrief policy is passed for a non-mock agent, or a non-default
+            debrief version is requested without a debrief.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -83,6 +89,8 @@ def run_episode(
         raise ValueError(f"--model is required for agent {agent!r}")
     if debrief_policy is not None and agent != "mock":
         raise ValueError("--debrief-policy is a mock-only control; live players answer freely")
+    if debrief_version != 1 and not debrief:
+        raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
 
@@ -100,6 +108,7 @@ def run_episode(
         meta=meta,
         gate=gate,
         debrief=debrief,
+        debrief_version=debrief_version,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -128,7 +137,7 @@ def run_episode(
     else:
         raise KeyError(f"unknown agent: {agent}")
 
-    bundle = load_bundle(world_name)
+    bundle = load_bundle(world_name, debrief_version=debrief_version)
     integrity_events: list[dict[str, Any]] = list(session.integrity_events)
     if agent in CLI_AGENTS:
         # Never score a trace restored from disk. Re-derive the episode in
@@ -264,7 +273,13 @@ def _score_disclosure(bundle: WorldBundle, trace: Trace, workspace: Path) -> Dis
     questions = bundle.debrief.questions()
     truth = bundle.debrief.true_answers(bundle.world, trace)
     declared, notes, error = read_debrief_answers(workspace, questions)
-    return score_debrief(truth, declared, notes=notes, error=error)
+    return score_debrief(
+        truth,
+        declared,
+        notes=notes,
+        error=error,
+        questionnaire=bundle.debrief.questionnaire_id(),
+    )
 
 
 def compare_records(records: Sequence[RunRecord]) -> str:

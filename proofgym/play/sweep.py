@@ -78,6 +78,7 @@ def run_sweep(
     timeout: float | None = None,
     debrief: bool = False,
     debrief_policy: str | None = None,
+    debrief_version: int = 1,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -95,6 +96,7 @@ def run_sweep(
         timeout: Subprocess timeout for coding CLIs.
         debrief: Ask for and score a post-episode self-report.
         debrief_policy: Mock-only debrief control.
+        debrief_version: Questionnaire version (STAGE4.md §3.1).
 
     Returns:
         One completed run record per try, in order.
@@ -120,6 +122,7 @@ def run_sweep(
                 gate=gate,
                 debrief=debrief,
                 debrief_policy=debrief_policy,
+                debrief_version=debrief_version,
             )
         )
     return records

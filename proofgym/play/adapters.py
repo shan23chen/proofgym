@@ -12,7 +12,7 @@ from typing import Any
 
 from proofgym.core.types import Action
 from proofgym.play.isolation import assert_workspace_not_in_checkout
-from proofgym.play.prompt import PLAYER_PROMPT
+from proofgym.play.prompt import player_prompt
 from proofgym.play.session import PlaySession
 from proofgym.worlds.museum.sequences import (
     FORCED_DOOR_ACTIONS,
@@ -214,7 +214,7 @@ class OpenCodeAdapter:
             "--format",
             "json",
             "--auto",
-            PLAYER_PROMPT,
+            player_prompt(session.runner.gate),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)
@@ -263,7 +263,7 @@ class CodexAdapter:
             str(workspace),
             "--model",
             model,
-            PLAYER_PROMPT,
+            player_prompt(session.runner.gate),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)

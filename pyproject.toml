@@ -27,7 +27,7 @@ where = ["."]
 include = ["proofgym*"]
 
 [tool.setuptools.package-data]
-"proofgym.worlds.museum" = ["traces/*.json", "debriefs/*.json"]
+"proofgym.worlds.museum" = ["traces/*.json", "debriefs/*.json", "debriefs/v2/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
