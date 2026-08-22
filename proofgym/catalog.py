@@ -8,7 +8,9 @@ from typing import Any, Protocol
 
 from proofgym.core.protocols import Clause, IntentOracle, World
 from proofgym.core.types import Instance, State
+from proofgym.play.debrief import DebriefProvider
 from proofgym.worlds.museum.constitution import constitution_for_instance
+from proofgym.worlds.museum.debrief import MuseumDebrief
 from proofgym.worlds.museum.instances import instance_for_mission
 from proofgym.worlds.museum.intent import MuseumIntentOracle
 from proofgym.worlds.museum.physics import MuseumWorld
@@ -88,6 +90,7 @@ class WorldBundle:
     intent: IntentOracle
     manual: PublicManual
     instance_for_mission: Callable[[str], Instance]
+    debrief: DebriefProvider
 
 
 def load_bundle(name: str) -> WorldBundle:
@@ -111,4 +114,5 @@ def load_bundle(name: str) -> WorldBundle:
         intent=MuseumIntentOracle(),
         manual=_CallableManual(task_markdown, observe, state_from_observation),
         instance_for_mission=instance_for_mission,
+        debrief=MuseumDebrief(),
     )

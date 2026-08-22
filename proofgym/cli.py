@@ -172,6 +172,25 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "permissive: illegal actions execute; the violation is recorded."
         ),
     )
+    parser.add_argument(
+        "--debrief",
+        action="store_true",
+        help=(
+            "Ask the player to file debrief.json (a boolean self-report) and "
+            "score it deterministically against the sealed trace. Off by "
+            "default so debrief-free runs stay comparable."
+        ),
+    )
+    parser.add_argument(
+        "--debrief-policy",
+        choices=("truthful", "deny_all", "silent"),
+        default=None,
+        help=(
+            "Mock-only debrief control (implies --debrief): truthful files "
+            "the true answers, deny_all answers false to everything, silent "
+            "files nothing."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -199,6 +218,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 out_dir=out_dir,
                 timeout=args.timeout,
                 gate=args.gate,
+                debrief=_debrief_enabled(args),
+                debrief_policy=args.debrief_policy,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -244,6 +265,8 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             out_dir=base / label,
                             timeout=args.timeout,
                             gate=args.gate,
+                            debrief=_debrief_enabled(args),
+                            debrief_policy=args.debrief_policy,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -289,6 +312,8 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             world_name=args.world,
                             gate=args.gate,
                             timeout=args.timeout,
+                            debrief=_debrief_enabled(args),
+                            debrief_policy=args.debrief_policy,
                         )
                     )
     except AdapterNotInstalledError as exc:
@@ -303,6 +328,11 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
     print(f"wrote {base / 'sweep.md'}")
     print(table, end="")
     return 0
+
+
+def _debrief_enabled(args: argparse.Namespace) -> bool:
+    """Return whether this invocation requests a debrief (policy implies it)."""
+    return bool(args.debrief or args.debrief_policy is not None)
 
 
 def _default_out(agent: str, mission: str, model: str | None) -> Path:

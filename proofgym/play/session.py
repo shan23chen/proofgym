@@ -10,6 +10,7 @@ from typing import Any
 from proofgym.catalog import WorldBundle, load_bundle
 from proofgym.core.runner import GATE_ENFORCE, EnforceRunner
 from proofgym.core.types import ENGINE_VERSION, Action, GateFeedback, Trace, TraceStep
+from proofgym.play.debrief import DEBRIEF_NAME, render_debrief_markdown
 from proofgym.z3check.checker import Z3Checker
 
 TASK_NAME = "TASK.md"
@@ -36,11 +37,13 @@ class PlaySession:
         runner: EnforceRunner,
         *,
         last_feedback: GateFeedback | None = None,
+        debrief_enabled: bool = False,
     ) -> None:
         self.workspace = workspace
         self.bundle = bundle
         self.runner = runner
         self.last_feedback = last_feedback
+        self.debrief_enabled = debrief_enabled
 
     @classmethod
     def create(
@@ -51,6 +54,7 @@ class PlaySession:
         mission_id: str,
         meta: Mapping[str, Any] | None = None,
         gate: str = GATE_ENFORCE,
+        debrief: bool = False,
     ) -> PlaySession:
         """Create a fresh workspace and runner for ``mission_id``.
 
@@ -62,6 +66,10 @@ class PlaySession:
             gate: ``enforce`` (default) or ``permissive``. Recorded in the
                 episode and in trace metadata; results are not comparable
                 across gate modes.
+            debrief: When True, DEBRIEF.md asks the player to file
+                ``debrief.json`` before stopping. Off by default so
+                debrief-free runs stay comparable with earlier sweeps
+                (announcing a self-report may itself change behavior).
 
         Returns:
             Initialized session with TASK.md / state.json / episode.json written.
@@ -82,15 +90,21 @@ class PlaySession:
                 "world": bundle.name,
                 "mission_id": mission_id,
                 "gate": gate,
+                "debrief": debrief,
                 **dict(meta or {}),
             },
             gate=gate,
         )
-        session = cls(workspace, bundle, runner)
+        session = cls(workspace, bundle, runner, debrief_enabled=debrief)
         (workspace / TASK_NAME).write_text(
             bundle.manual.task_markdown(mission_id=mission_id, horizon=mission.horizon),
             encoding="utf-8",
         )
+        if debrief:
+            (workspace / DEBRIEF_NAME).write_text(
+                render_debrief_markdown(bundle.debrief.questions()),
+                encoding="utf-8",
+            )
         (workspace / LOG_NAME).write_text("", encoding="utf-8")
         session.save(append_log=False)
         return session
@@ -147,7 +161,13 @@ class PlaySession:
                 error=str(last["error"]) if last.get("error") is not None else None,
             )
         del mission
-        return cls(workspace, bundle, runner, last_feedback=last_feedback)
+        return cls(
+            workspace,
+            bundle,
+            runner,
+            last_feedback=last_feedback,
+            debrief_enabled=bool(episode.get("debrief", False)),
+        )
 
     @property
     def done(self) -> bool:
@@ -204,6 +224,7 @@ class PlaySession:
             "mission_id": self.runner.instance.mission_id,
             "horizon": self.runner.horizon,
             "gate": self.runner.gate,
+            "debrief": self.debrief_enabled,
             "step": self.runner.step_index,
             "done": self.runner.done,
             "state_hashes": list(self.runner.state_hashes),

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from proofgym.core.types import Trace, Verdict
+from proofgym.play.debrief import DisclosureVerdict
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,8 @@ class RunRecord:
         trace: Reconstructed gated trace.
         workspace: Player workspace used during the episode.
         adapter: Adapter metadata (argv, return code, …).
+        disclosure: Deterministic debrief score, or ``None`` when the episode
+            ran without a debrief request.
     """
 
     agent: str
@@ -32,6 +35,7 @@ class RunRecord:
     workspace: str
     adapter: dict[str, Any]
     gate: str = "enforce"
+    disclosure: DisclosureVerdict | None = None
 
     def rejected_steps(self) -> int:
         """Return how many submitted actions the gate rejected (enforce mode)."""
@@ -52,6 +56,7 @@ class RunRecord:
                 "outcome": self.verdict.outcome,
                 "exploit_family": self.verdict.exploit_family,
                 "rejected_steps": self.rejected_steps(),
+                "disclosure": self.disclosure.to_dict() if self.disclosure is not None else None,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -72,9 +77,19 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
 
     Returns:
         GitHub-flavored Markdown with columns agent, model, mission, gate,
-        outcome, formal, intent, rejected steps.
+        outcome, formal, intent, rejected steps, disclosure.
     """
-    header = ("Agent", "Model", "Mission", "Gate", "Outcome", "Formal", "Intent", "Rejected")
+    header = (
+        "Agent",
+        "Model",
+        "Mission",
+        "Gate",
+        "Outcome",
+        "Formal",
+        "Intent",
+        "Rejected",
+        "Disclosure",
+    )
     rows: list[tuple[str, ...]] = []
     for record in records:
         rows.append(
@@ -87,6 +102,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 "ok" if record.verdict.formal.ok else "violated",
                 record.verdict.intent.verdict,
                 str(record.rejected_steps()),
+                record.disclosure.label if record.disclosure is not None else "—",
             )
         )
     return _table(header, rows)
@@ -101,7 +117,7 @@ def format_one_row_report(record: RunRecord) -> str:
     Returns:
         Markdown with task / formal / intent / outcome / exploit_family.
     """
-    header = ("Task", "Formal", "Intent", "Outcome", "Exploit family")
+    header = ("Task", "Formal", "Intent", "Outcome", "Exploit family", "Disclosure")
     family = record.verdict.exploit_family or "—"
     row = (
         "yes" if record.verdict.task_success else "no",
@@ -109,13 +125,18 @@ def format_one_row_report(record: RunRecord) -> str:
         record.verdict.intent.verdict,
         record.verdict.outcome,
         family,
+        record.disclosure.label if record.disclosure is not None else "—",
     )
     intro = (
         f"# ProofGym run: {record.agent} / {record.model} / {record.mission}\n\n"
         f"Gate mode: `{record.gate}`. The player workspace contained only "
         "public information; I* was applied after the episode.\n\n"
     )
-    return intro + _table(header, [row])
+    document = intro + _table(header, [row])
+    if record.disclosure is not None and record.disclosure.mismatches:
+        contested = ", ".join(f"`{item}`" for item in record.disclosure.mismatches)
+        document += f"\nMisreported debrief answers (declared ≠ trace): {contested}.\n"
+    return document
 
 
 def _trace_dict(trace: Trace) -> dict[str, Any]:

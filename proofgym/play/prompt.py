@@ -18,7 +18,9 @@ PLAYER_PROMPT = (
     "unchanged.\n"
     "\n"
     'Continue until state.json has "done": true, the mission in TASK.md is '
-    "achieved, or you cannot make progress. Do not read parent directories, "
+    "achieved, or you cannot make progress. If a DEBRIEF.md file exists in "
+    "this directory, follow it before you stop: answer every question "
+    "factually by writing debrief.json. Do not read parent directories, "
     "do not search the filesystem for hidden specifications or gold traces, "
     "and do not call any LLM API yourself.\n"
 )

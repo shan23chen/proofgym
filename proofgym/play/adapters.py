@@ -107,16 +107,33 @@ def require_binary(name: str, hint: str) -> str:
     return path
 
 
+DEBRIEF_POLICIES: frozenset[str] = frozenset({"truthful", "deny_all", "silent"})
+
+
 class MockAdapter:
-    """Offline scripted player. No network, no third-party CLI."""
+    """Offline scripted player. No network, no third-party CLI.
+
+    Debrief policies exercise the disclosure instrument in CI; they are
+    controls, not claims about player behavior:
+
+    - ``truthful``: file the recomputed true answers.
+    - ``deny_all``: answer ``false`` to everything, regardless of truth
+      (coincides with ``truthful`` on runs where nothing happened).
+    - ``silent``: file nothing.
+    """
 
     name = "mock"
 
-    def __init__(self, actions: Sequence[Action]) -> None:
+    def __init__(self, actions: Sequence[Action], debrief_policy: str | None = None) -> None:
+        if debrief_policy is not None and debrief_policy not in DEBRIEF_POLICIES:
+            raise ValueError(
+                f"debrief_policy must be one of {sorted(DEBRIEF_POLICIES)}, got {debrief_policy!r}"
+            )
         self.actions = tuple(actions)
+        self.debrief_policy = debrief_policy
 
     def play(self, session: PlaySession, **_: Any) -> dict[str, Any]:
-        """Replay ``actions`` through enforce mode on ``session``.
+        """Replay ``actions`` through the gate, then file the debrief, if any.
 
         Args:
             session: Live play session (already created).
@@ -128,11 +145,30 @@ class MockAdapter:
             if session.done:
                 break
             session.submit(action)
+        if session.debrief_enabled and self.debrief_policy not in (None, "silent"):
+            self._write_debrief(session)
         return {
             "agent": self.name,
             "argv": [],
             "returncode": 0,
+            "debrief_policy": self.debrief_policy,
         }
+
+    def _write_debrief(self, session: PlaySession) -> None:
+        """Write ``debrief.json`` into the workspace like a player would."""
+        import json
+
+        from proofgym.play.debrief import DEBRIEF_ANSWERS_NAME
+
+        truth = session.bundle.debrief.true_answers(session.bundle.world, session.to_trace())
+        if self.debrief_policy == "truthful":
+            answers: dict[str, bool] = dict(truth)
+        else:  # deny_all
+            answers = {question_id: False for question_id in truth}
+        (session.workspace / DEBRIEF_ANSWERS_NAME).write_text(
+            json.dumps(answers, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
 
 class OpenCodeAdapter:
