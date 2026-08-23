@@ -1,0 +1,92 @@
+# Scout session note — duo track (12h window, handoff ~noon ET Aug 23 2026)
+
+Duo-track-only session per the mid-window collision update: the planned
+Stage 1–8 frontier synthesis was **dropped before anything was written**
+(Random Researcher owns `docs/STAGE_REPORT.md` + `docs/NEXT.md`); no
+`reports/frontier_*` files exist on any branch. Nothing in this session
+touches `worlds/museum/`, the stage 2–8 ladder, `runs/`, `compare-*.md`,
+`core/`, `z3check/`, or `play/`. D1–D12 and M1–M10 unchanged. Nothing was
+merged to main; no runs were deleted.
+
+## What shipped
+
+### 1. `museum_duo` rebased onto stage-8 main — PR [#17](https://github.com/shan23chen/proofgym/pull/17)
+
+Branch `cursor/museum-duo-v0-rebase-5445` (supersedes PR #4's base,
+`museum-duo-v0` @ `927784cd`, which was rooted before stage 2). All five duo
+commits cherry-picked cleanly; **one conflict** (`pyproject.toml`
+package-data — main's expanded museum `debriefs/` list vs. the duo traces
+line; resolved by keeping both). Zero-diff budget re-verified post-rebase:
+`git diff main` over `core/`, `z3check/`, `worlds/museum/`, `play/`, and
+all pre-existing tests is empty.
+
+- **pytest: 184 passed** (main baseline 161 + 23 duo tests), no skips.
+- **Flip twin re-verified schedule-pure:** sealed twins differ at exactly
+  steps 21/23 (H's amend/wait swap), identical per-agent multisets; at E's
+  exit (step 22) the registry differs only in lobby membership; C1 fires at
+  exactly step 22 in the twin. `formal_exploit` → `illegal_shortcut` on
+  the schedule alone.
+- `reports/duo_v0_outcome_matrix.md` — the five sealed traces: outcomes,
+  winners, flip-twin analysis, reproduction snippet.
+- `reports/duo_next.md` — five ranked duo-only next bets with information
+  value / cost / collision risk.
+
+### 2. Top next bet, tried and landed — PR [#18](https://github.com/shan23chen/proofgym/pull/18) (stacked on #17)
+
+Branch `cursor/duo-enforce-gate-5445`: Bet 1 from `duo_next.md` — run the
+duo world behind the world-agnostic `EnforceRunner` (first gate-mode
+exercise of a second world) and quantify the MO4 starvation channels.
+Two new files only (`tests/test_duo_gate.py`, `reports/duo_enforce_gate.md`).
+
+- **pytest: 192 passed** (184 + 8 new), ruff clean.
+- Findings, all pinned by test: (i) the runner abstraction clears
+  PLAN_MULTIAGENT §11 no-go trigger 1 in gate mode with zero core changes —
+  a permissive run even seals hashes byte-identical to the sealed audit
+  twin; (ii) schedule-relative legality is now a *gate* fact (base schedule
+  enforce-clean → `formal_exploit`; flipped twin rejected once, C1 at step
+  22 → `honest_failure`), and one rejection cascades because the rejected
+  actor stays active; (iii) **MO4 rejection-spam starvation measured**: the
+  victim gets 3 of a parity-20 turns and zero after spam starts (18
+  rejections, 17 out-of-turn no-ops burned); the spammer needs no
+  capability because C2 is action-keyed; (iv) a second, symmetric channel —
+  out-of-turn flooding — passes the gate as `executed: true` identity
+  no-ops and is invisible to rejected-step counts. MO4's sanctioned
+  mitigation deliberately **not** added (measure before mitigating).
+
+## What was tried next / what failed
+
+Nothing failed technically this window: the rebase had a single trivial
+conflict, all suites are green, and the top bet landed on the first
+attempt (semantics behaved exactly as PLAN_MULTIAGENT predicted on paper —
+the prototypes confirmed both starvation channels before any test was
+written). The dropped item was the frontier synthesis (ownership collision,
+see header), not a technical failure. Bets deliberately not attempted:
+
+- **Bet 2, C4 coalition-requiring constitution** — `amended_by` enters the
+  duo state payload and moves every sealed duo state hash; M10 requires an
+  owner decision because it changes (duo) public C. Needs its own slice.
+- **Bet 3, live duo harness thin slice** — mechanically feasible
+  (`catalog.py`'s `WorldBundle` protocol is world-agnostic) but touches
+  shared `play/`/`catalog.py` surfaces (highest OG-collision risk of any
+  bet) and is gated on MO1 (brief disclosure policy), an explicitly
+  reserved experimental variable. Also now informed by #18: the harness
+  must meter submissions per actor and report per-actor turns-received.
+- **Bets 4/5** (duo cell in `proofgym report`; more F1 traces) — skipped as
+  low value; reasons in `duo_next.md`.
+
+## Recommended handoff (noon)
+
+1. **Review/merge order: #17 then #18** (stacked). #17 is the base swap for
+   PR #4 — after it lands, close #4 or repoint it. Neither is merged; both
+   are conflict-free against `70ab159` main as of this writing.
+2. **Owner decisions queued** (M10): (a) C4 / `museum_duo_public.v1_coalition`
+   design slice — the one bet that answers the solo-replicability
+   objection, the duo track's main existential risk; (b) live-harness
+   go/no-go with MO1 decided explicitly; #18's §4 lists the two harness
+   design requirements the starvation measurements imply.
+3. **If picking up code immediately:** the live-harness thin slice is the
+   natural next bet *after* an M10/MO1 decision; without one, the next
+   zero-collision work is a C4 design note (no code) or duo enforce-mode
+   sweeps once a duo mock adapter exists.
+4. Baselines for regression checking: main 161 passed; +duo rebase 184;
+   +gate probes 192.
