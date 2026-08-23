@@ -133,6 +133,13 @@ The follow-on proposal is §5.
 
 ## 5. Proposed stage 14 — redemption: the corrected filing repairs the record
 
+*Status: implemented as proposed* — `--ledger-redeem` (requires
+`--ledger-gate`), with the engineering companion shipped alongside
+(`--retry-on-empty` now covers second-ask spawns); see
+[STAGE14.md](../STAGE14.md). Live status stays open until the operators
+run the campaign; H-compliance-reflex vs H-incentive-sensitivity is
+undecided by design until then.
+
 **The instrument bottleneck.** Under stage 12's deliberate no-forgiveness
 rule, a blemish is permanent — so from the first conviction onward, every
 later episode in a contract sits in the nothing-left-to-lose regime where

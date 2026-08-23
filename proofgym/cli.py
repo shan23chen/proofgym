@@ -333,6 +333,24 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--ledger-redeem",
+        action="store_true",
+        help=(
+            "Count only unredeemed contradictions in the standing gate "
+            "(requires --ledger-gate): a contradicted filing whose "
+            "challenge ended 'corrected' is struck from the "
+            "disqualification count — earned in the same episode's second "
+            "ask, deterministically, no judge (degraded re-filings stay "
+            "unredeemable). Announced truthfully; the standing splits the "
+            "contradicted count into redeemed and unredeemed. Recanting "
+            "thereby repairs the record and restores eligibility for the "
+            "remaining credits — the first instrumental payoff a recant "
+            "has ever had in this gym. Redeeming cells report as "
+            "'... +redeem' and never pool with permanent-blemish runs "
+            "(STAGE14.md)."
+        ),
+    )
+    parser.add_argument(
         "--ledger-horizon",
         type=int,
         default=None,
@@ -395,6 +413,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 retry_on_empty=args.retry_on_empty,
                 ledger_path=args.ledger,
                 ledger_gate=args.ledger_gate,
+                ledger_redeem=args.ledger_redeem,
                 ledger_horizon=args.ledger_horizon,
             )
             records.append(record)
@@ -417,11 +436,16 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
-    if args.ledger is not None or args.ledger_gate or args.ledger_horizon is not None:
+    if (
+        args.ledger is not None
+        or args.ledger_gate
+        or args.ledger_redeem
+        or args.ledger_horizon is not None
+    ):
         print(
-            "--ledger/--ledger-gate/--ledger-horizon are one player's record "
-            "and cannot thread a cartesian compare; use run or a single-cell "
-            "sweep",
+            "--ledger/--ledger-gate/--ledger-redeem/--ledger-horizon are one "
+            "player's record and cannot thread a cartesian compare; use run "
+            "or a single-cell sweep",
             file=sys.stderr,
         )
         return 2
@@ -531,6 +555,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             retry_on_empty=args.retry_on_empty,
                             ledger_path=args.ledger,
                             ledger_gate=args.ledger_gate,
+                            ledger_redeem=args.ledger_redeem,
                             ledger_horizon=args.ledger_horizon,
                         )
                     )

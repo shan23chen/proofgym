@@ -96,6 +96,7 @@ class PlaySession:
         self_certify: bool = False,
         ledger: bool = False,
         ledger_gated: bool = False,
+        ledger_redeem: bool = False,
         ledger_horizon: int | None = None,
         ledger_position: int | None = None,
         integrity_events: list[dict[str, Any]] | None = None,
@@ -112,6 +113,7 @@ class PlaySession:
         self.self_certify = self_certify
         self.ledger = ledger
         self.ledger_gated = ledger_gated
+        self.ledger_redeem = ledger_redeem
         self.ledger_horizon = ledger_horizon
         self.ledger_position = ledger_position
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
@@ -132,6 +134,7 @@ class PlaySession:
         self_certify: bool = False,
         standing_text: str | None = None,
         ledger_gated: bool = False,
+        ledger_redeem: bool = False,
         ledger_horizon: int | None = None,
         ledger_position: int | None = None,
     ) -> PlaySession:
@@ -180,6 +183,10 @@ class PlaySession:
                 the record at episode start shows any filing contradicted
                 by the sealed record (STAGE12.md). Recorded in the
                 authoritative record only when True.
+            ledger_redeem: When True (requires ``ledger_gated``), the gate
+                counts only unredeemed contradictions and DEBRIEF.md's
+                Stakes section announces the redemption rule (STAGE14.md).
+                Recorded in the authoritative record only when True.
             ledger_horizon: Announced contract length ``K`` (STAGE13.md).
                 Requires ``standing_text``; the caller (the harness) holds
                 the contract to ``K`` engagements. With ``ledger_gated``
@@ -223,6 +230,11 @@ class PlaySession:
                 "ledger_gated requires an announced client record and stakes "
                 "(a gate on a record nobody keeps is incoherent)"
             )
+        if ledger_redeem and not ledger_gated:
+            raise ValueError(
+                "ledger_redeem requires ledger_gated (without the gate there "
+                "is no disqualification to redeem)"
+            )
         if ledger_horizon is not None and standing_text is None:
             raise ValueError(
                 "ledger_horizon requires an announced client record "
@@ -265,6 +277,7 @@ class PlaySession:
             self_certify=self_certify,
             ledger=standing_text is not None,
             ledger_gated=ledger_gated,
+            ledger_redeem=ledger_redeem,
             ledger_horizon=ledger_horizon,
             ledger_position=ledger_position,
         )
@@ -288,6 +301,7 @@ class PlaySession:
                         bundle.debrief.claim_question_id() if self_certify else None
                     ),
                     ledger_gated=ledger_gated,
+                    ledger_redeem=ledger_redeem,
                     ledger_horizon=ledger_horizon if ledger_gated else None,
                     ledger_position=ledger_position if ledger_gated else None,
                 ),
@@ -381,6 +395,7 @@ class PlaySession:
             self_certify=bool(episode.get("self_certify", False)),
             ledger=bool(episode.get("ledger", False)),
             ledger_gated=bool(episode.get("ledger_gate", False)),
+            ledger_redeem=bool(episode.get("ledger_redeem", False)),
             ledger_horizon=(
                 int(episode["ledger_horizon"])
                 if episode.get("ledger_horizon") is not None
@@ -498,6 +513,10 @@ class PlaySession:
         # gate is announced (STAGE12.md).
         if self.ledger and self.ledger_gated:
             episode["ledger_gate"] = True
+        # Absent means permanent blemishes: recorded only when redemption
+        # is announced (STAGE14.md).
+        if self.ledger_gated and self.ledger_redeem:
+            episode["ledger_redeem"] = True
         # Absent means an open-ended contract: recorded only when a horizon
         # is announced (STAGE13.md).
         if self.ledger and self.ledger_horizon is not None:
