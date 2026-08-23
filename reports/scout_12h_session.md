@@ -53,6 +53,20 @@ Two new files only (`tests/test_duo_gate.py`, `reports/duo_enforce_gate.md`).
   no-ops and is invisible to rejected-step counts. MO4's sanctioned
   mitigation deliberately **not** added (measure before mitigating).
 
+### 3. Bet 2 delivered as design note — PR [#21](https://github.com/shan23chen/proofgym/pull/21) (stacked on #18)
+
+Branch `cursor/duo-c4-design-5445`: `docs/DUO_C4_DESIGN.md` — the
+coalition-requiring C4 (`museum_duo_public.v1_coalition`) as **design
+only**: no constitution code, no state-schema change, no resealing; suite
+still 192 passed. Two §6.4 errors found on paper before any code: the
+sketch mis-names `duo_relay` as the surviving trace (H amends *and* picks
+up at step 15 — the true institutional artifact is `duo_wipe_mule`), and
+the one-directional wording has a steal-first hole (the OG surgical-lobby
+route stays solo-legal), fixed by a symmetric clause with a solo-closure
+proof sketch. Includes the `amended_by` hash-blast options (reseal
+pre-merge / sibling package / conditional payload) and the M10 owner
+go/no-go checklist. Implementation is gated on that checklist.
+
 ## What was tried next / what failed
 
 Nothing failed technically this window: the rebase had a single trivial
@@ -62,9 +76,11 @@ the prototypes confirmed both starvation channels before any test was
 written). The dropped item was the frontier synthesis (ownership collision,
 see header), not a technical failure. Bets deliberately not attempted:
 
-- **Bet 2, C4 coalition-requiring constitution** — `amended_by` enters the
-  duo state payload and moves every sealed duo state hash; M10 requires an
-  owner decision because it changes (duo) public C. Needs its own slice.
+- **Bet 2, C4 coalition-requiring constitution** — code deliberately not
+  written (`amended_by` moves sealed duo hashes; M10 owner decision
+  required); delivered instead as the [#21](https://github.com/shan23chen/proofgym/pull/21)
+  design note, which turned up two paper bugs in §6.4 that coding first
+  would have baked in.
 - **Bet 3, live duo harness thin slice** — mechanically feasible
   (`catalog.py`'s `WorldBundle` protocol is world-agnostic) but touches
   shared `play/`/`catalog.py` surfaces (highest OG-collision risk of any
@@ -76,17 +92,18 @@ see header), not a technical failure. Bets deliberately not attempted:
 
 ## Recommended handoff (noon)
 
-1. **Review/merge order: #17 then #18** (stacked). #17 is the base swap for
-   PR #4 — after it lands, close #4 or repoint it. Neither is merged; both
-   are conflict-free against `70ab159` main as of this writing.
-2. **Owner decisions queued** (M10): (a) C4 / `museum_duo_public.v1_coalition`
-   design slice — the one bet that answers the solo-replicability
-   objection, the duo track's main existential risk; (b) live-harness
-   go/no-go with MO1 decided explicitly; #18's §4 lists the two harness
-   design requirements the starvation measurements imply.
-3. **If picking up code immediately:** the live-harness thin slice is the
-   natural next bet *after* an M10/MO1 decision; without one, the next
-   zero-collision work is a C4 design note (no code) or duo enforce-mode
-   sweeps once a duo mock adapter exists.
+1. **Review/merge order: #17 then #18 then #21** (stacked). #17 is the
+   base swap for PR #4 — after it lands, close #4 or repoint it. Nothing
+   is merged; all are conflict-free against `70ab159` main as of this
+   writing.
+2. **Owner decisions queued** (M10): (a) the #21 C4 checklist — seven
+   written decisions, of which the state plan (reseal-pre-merge vs.
+   sibling package) is load-bearing and cheapest to take **before** #17
+   merges; (b) live-harness go/no-go with MO1 decided explicitly; #18's §4
+   lists the two harness design requirements the starvation measurements
+   imply.
+3. **If picking up code immediately:** implement C4 per the #21 checklist
+   once signed; the live-harness thin slice stays gated on M10/MO1 and was
+   deliberately not started this window.
 4. Baselines for regression checking: main 161 passed; +duo rebase 184;
    +gate probes 192.
