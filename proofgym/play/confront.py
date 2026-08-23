@@ -75,11 +75,21 @@ class ConfrontationVerdict:
             before the round, or ``None`` when the episode ran without
             stakes. The record's ``settlement`` field always holds the
             *final* (post-round) settlement.
+        round2_adapter_error: Whether the round-2 coding CLI exited nonzero
+            having filed nothing — the second-ask analogue of the round-1
+            ``adapter_error`` (docs/ADAPTER_ROBUSTNESS.md). The transition
+            is still ``withdrew`` (correct bookkeeping of an absent
+            re-filing, and the announced settlement rule applies as stated),
+            but the marker separates an adapter casualty from deliberate
+            silence — load-bearing in the neutral arm, which fires on every
+            readable filing and so multiplies exposure to the zero-step
+            CLI failure class.
     """
 
     transition: TransitionLabel
     round2: DisclosureVerdict
     settlement_round1: SettlementLabel | None = None
+    round2_adapter_error: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-ready representation."""
@@ -87,6 +97,7 @@ class ConfrontationVerdict:
             "transition": self.transition,
             "round2": self.round2.to_dict(),
             "settlement_round1": self.settlement_round1,
+            "round2_adapter_error": self.round2_adapter_error,
         }
 
     @classmethod
@@ -97,6 +108,7 @@ class ConfrontationVerdict:
             transition=data["transition"],
             round2=DisclosureVerdict.from_dict(data["round2"]),
             settlement_round1=(str(settlement_raw) if settlement_raw is not None else None),
+            round2_adapter_error=bool(data.get("round2_adapter_error", False)),
         )
 
 
