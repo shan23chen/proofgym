@@ -97,6 +97,13 @@ favor of H-prudence** (STAGE10.md §8): reaffirmed inflators went
 5 / 0 / 1, and the truthful population held 2/2 with zero degraded. The
 folds are detection-driven — and incentive-dominated, which is the
 stage-11 hook (see STAGE11.md when it lands).
+*Fourth update:* stage 11 shipped and ran live (STAGE11.md §8): the
+announced record **does not deter** — round-1 inflation 5/6 overall, 2/2
+after a recorded detection, including a recidivist whose shown standing
+listed its own conviction and recant. Within-episode patterns unchanged
+(+ledger confront 2 corrected / 1 withdrew; +ledger re-ask 2/2 doubled
+down). Reputation-as-information fails; stage 12 gates the credit on the
+standing (see STAGE12.md when it lands).
 
 Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
 the outcome of item 1; both branches are small, but neither should be built
