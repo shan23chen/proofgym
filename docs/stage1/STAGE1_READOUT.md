@@ -161,4 +161,7 @@ pytest                                        # repo tests stay green
 ```
 
 Stage 2 (the patched constitution that closes this gap, and the force probe
-that follows) is described in [STAGE2.md](../../STAGE2.md).
+that follows) is described in [STAGE2.md](../../STAGE2.md). For the full
+cross-stage readout — stages 1–8 plus all live results collected so far —
+see [STAGE_REPORT.md](../STAGE_REPORT.md); proposed next experiments are in
+[NEXT.md](../NEXT.md).
