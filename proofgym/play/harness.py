@@ -42,6 +42,13 @@ from proofgym.play.debrief import (
     settle_debrief,
 )
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
+from proofgym.play.ledger import (
+    append_ledger,
+    ledger_entry,
+    load_ledger,
+    render_standing_markdown,
+    standing_summary,
+)
 from proofgym.play.prompt import confront_prompt, reaffirm_prompt
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession, private_dir_for
@@ -71,6 +78,7 @@ def run_episode(
     reaffirm: bool = False,
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
+    ledger_path: Path | None = None,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -147,6 +155,16 @@ def run_episode(
             episode, and record the discarded attempt in the adapter
             metadata. A run whose final attempt still fails is marked
             ``adapter_error`` either way (docs/ADAPTER_ROBUSTNESS.md).
+        ledger_path: Engagement-ledger file (STAGE11.md). When given,
+            TASK.md announces — truthfully — that the client keeps a
+            running record of engagements under this contract (with a
+            summary of the record to date when prior entries exist), and
+            the episode's settlement, disclosure label, and second-ask
+            transition are appended to the file when it settles. Requires
+            ``debrief_stakes`` (a reputation is a fold over settlements).
+            Ledger cells report as ``<mission> … +ledger`` and never pool
+            with ledger-free runs. The file is harness-side and never
+            player-writable.
 
     Returns:
         Completed run record.
@@ -201,6 +219,12 @@ def run_episode(
             "--retry-on-empty is a coding-CLI robustness control; the mock adapter "
             "cannot fail to start and CI runs must stay deterministic"
         )
+    if ledger_path is not None and not debrief_stakes:
+        raise ValueError(
+            "--ledger requires --debrief-stakes: a reputation is a fold over "
+            "settlements (STAGE5.md §5, STAGE11.md), and a stakes-free episode "
+            "has nothing to record"
+        )
     if debrief_version != 1 and not debrief:
         raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
     if debrief_stakes and not debrief:
@@ -231,6 +255,15 @@ def run_episode(
     if agent in CLI_AGENTS:
         assert_workspace_not_in_checkout(workspace)
 
+    # The engagement ledger is read once, before the episode: the standing
+    # shown to the player is the record as it stood at episode start, and
+    # this episode is appended only after it settles (STAGE11.md).
+    ledger_standing: dict[str, Any] | None = None
+    standing_text: str | None = None
+    if ledger_path is not None:
+        ledger_standing = standing_summary(load_ledger(ledger_path))
+        standing_text = render_standing_markdown(ledger_standing)
+
     meta = {"agent_id": f"{agent}.{model_id}", "mission_id": mission}
     session = PlaySession.create(
         workspace,
@@ -243,6 +276,7 @@ def run_episode(
         debrief_stakes=debrief_stakes,
         credit_objective=credit_objective,
         self_certify=self_certify,
+        standing_text=standing_text,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -276,6 +310,7 @@ def run_episode(
                     debrief_stakes=debrief_stakes,
                     credit_objective=credit_objective,
                     self_certify=self_certify,
+                    standing_text=standing_text,
                 )
             adapter_meta = cli_adapter.play(
                 session,
@@ -416,7 +451,26 @@ def run_episode(
         reaffirm=reaffirm,
         reaffirmation=reaffirmation,
         adapter_error=adapter_error,
+        ledger=ledger_path is not None,
+        ledger_standing=ledger_standing,
     )
+    if ledger_path is not None:
+        second_ask = confrontation if confrontation is not None else reaffirmation
+        append_ledger(
+            ledger_path,
+            ledger_entry(
+                mission_label=record.mission_label(),
+                gate=gate,
+                settlement=settlement,
+                disclosure_label=disclosure.label if disclosure is not None else None,
+                second_ask_arm=(
+                    ("confront" if confrontation is not None else "reaffirm")
+                    if second_ask is not None
+                    else None
+                ),
+                transition=second_ask.transition if second_ask is not None else None,
+            ),
+        )
     _write_artifacts(out_dir, record, workspace)
     return record
 
@@ -802,6 +856,12 @@ def load_run_record(path: Path) -> RunRecord:
         reaffirm=bool(payload.get("reaffirm", False)),
         reaffirmation=reaffirmation,
         adapter_error=bool(payload.get("adapter_error", False)),
+        ledger=bool(payload.get("ledger", False)),
+        ledger_standing=(
+            dict(payload["ledger_standing"])
+            if isinstance(payload.get("ledger_standing"), Mapping)
+            else None
+        ),
     )
 
 

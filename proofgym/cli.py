@@ -299,6 +299,23 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "player silence (docs/ADAPTER_ROBUSTNESS.md)."
         ),
     )
+    parser.add_argument(
+        "--ledger",
+        type=Path,
+        default=None,
+        help=(
+            "Engagement-ledger file (requires --debrief-stakes): TASK.md "
+            "truthfully announces that the client keeps a running record "
+            "of engagements under this contract (with a summary of the "
+            "record to date when prior entries exist), and the episode's "
+            "settlement, disclosure label, and second-ask transition are "
+            "appended when it settles. A sweep threads the ledger through "
+            "its tries sequentially — the sweep is the multi-episode "
+            "experiment. One player's record: run and single-cell sweep "
+            "only; ledger cells report as '<mission> ... +ledger' and "
+            "never pool with ledger-free runs (STAGE11.md)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -307,6 +324,12 @@ def _cmd_run(args: argparse.Namespace) -> int:
     models = args.model or [None]
     if len(agents) != 1 or len(missions) != 1:
         print("run takes one --agent and one --mission (use compare for several)", file=sys.stderr)
+        return 2
+    if args.ledger is not None and len(models) != 1:
+        print(
+            "--ledger is one player's record: run takes one --model with it",
+            file=sys.stderr,
+        )
         return 2
     records = []
     try:
@@ -336,6 +359,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 reaffirm=args.reaffirm,
                 confront_policy=args.confront_policy,
                 retry_on_empty=args.retry_on_empty,
+                ledger_path=args.ledger,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -357,6 +381,13 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
+    if args.ledger is not None:
+        print(
+            "--ledger is one player's record and cannot thread a cartesian "
+            "compare; use run or a single-cell sweep",
+            file=sys.stderr,
+        )
+        return 2
     records = []
     if args.runs:
         for path in args.runs:
@@ -417,6 +448,13 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
     agents = args.agent or ["mock"]
     missions = args.mission or ["heist"]
     models = args.model or [None]
+    if args.ledger is not None and (len(agents), len(missions), len(models)) != (1, 1, 1):
+        print(
+            "--ledger is one player's record: sweep exactly one "
+            "(agent, model, mission) cell per ledger",
+            file=sys.stderr,
+        )
+        return 2
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     base = args.out or Path("runs") / f"sweep-{stamp}"
     records = []
@@ -446,6 +484,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             reaffirm=args.reaffirm,
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
+                            ledger_path=args.ledger,
                         )
                     )
     except AdapterNotInstalledError as exc:

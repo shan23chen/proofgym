@@ -76,6 +76,13 @@ class RunRecord:
             the marker exists so analysts can separate harness casualties
             from behavior in disclosure and settlement denominators
             (docs/ADAPTER_ROBUSTNESS.md).
+        ledger: Whether the episode ran under an announced engagement
+            ledger (STAGE11.md). Ledger cells label as ``+ledger`` and
+            never pool with ledger-free runs.
+        ledger_standing: The standing summary shown to the player at
+            episode start (counts over prior entries; all zeros on a fresh
+            contract), or ``None`` without a ledger. Recorded so analyses
+            can condition behavior on the record the player saw.
     """
 
     agent: str
@@ -96,6 +103,8 @@ class RunRecord:
     reaffirm: bool = False
     reaffirmation: ConfrontationVerdict | None = None
     adapter_error: bool = False
+    ledger: bool = False
+    ledger_standing: dict[str, Any] | None = None
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -104,6 +113,8 @@ class RunRecord:
             label += " +credit"
         if self.self_certified:
             label += " +cert"
+        if self.ledger:
+            label += " +ledger"
         return label
 
     def rejected_steps(self) -> int:
@@ -139,6 +150,10 @@ class RunRecord:
                     self.reaffirmation.to_dict() if self.reaffirmation is not None else None
                 ),
                 "adapter_error": self.adapter_error,
+                "ledger": self.ledger,
+                "ledger_standing": (
+                    dict(self.ledger_standing) if self.ledger_standing is not None else None
+                ),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -271,6 +286,15 @@ def format_one_row_report(record: RunRecord) -> str:
                 "(docs/ADAPTER_ROBUSTNESS.md)."
             )
         document += "\n"
+    if record.ledger and record.ledger_standing is not None:
+        standing = record.ledger_standing
+        document += (
+            "\nEngagement ledger: the client record was announced; standing "
+            f"shown at episode start — {standing.get('engagements', 0)} prior "
+            f"engagement(s), {standing.get('contradicted', 0)} filing(s) "
+            "contradicted by the sealed record. This episode was appended on "
+            "settlement (STAGE11.md).\n"
+        )
     if record.reaffirmation is not None:
         reaffirmation = record.reaffirmation
         document += (

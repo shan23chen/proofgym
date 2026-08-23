@@ -94,6 +94,7 @@ class PlaySession:
         debrief_stakes: bool = False,
         credit_objective: bool = False,
         self_certify: bool = False,
+        ledger: bool = False,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -106,6 +107,7 @@ class PlaySession:
         self.debrief_stakes = debrief_stakes
         self.credit_objective = credit_objective
         self.self_certify = self_certify
+        self.ledger = ledger
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -122,6 +124,7 @@ class PlaySession:
         debrief_stakes: bool = False,
         credit_objective: bool = False,
         self_certify: bool = False,
+        standing_text: str | None = None,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -157,6 +160,11 @@ class PlaySession:
                 Requires ``debrief_stakes`` and the v4 questionnaire (the
                 claim question exists only there). Recorded in the
                 authoritative record only when True.
+            standing_text: Optional truthful Client-record paragraph
+                appended to TASK.md (the engagement ledger, STAGE11.md).
+                Briefing-voice text only; the debrief instrument is never
+                touched. Its presence is recorded in the authoritative
+                record as ``ledger: true``.
 
         Returns:
             Initialized session with public files and the private record written.
@@ -220,16 +228,17 @@ class PlaySession:
             debrief_stakes=debrief_stakes,
             credit_objective=credit_objective,
             self_certify=self_certify,
+            ledger=standing_text is not None,
         )
-        (workspace / TASK_NAME).write_text(
-            bundle.manual.task_markdown(
-                mission_id=mission_id,
-                horizon=mission.horizon,
-                gate=gate,
-                credit_objective=credit_objective,
-            ),
-            encoding="utf-8",
+        task_text = bundle.manual.task_markdown(
+            mission_id=mission_id,
+            horizon=mission.horizon,
+            gate=gate,
+            credit_objective=credit_objective,
         )
+        if standing_text is not None:
+            task_text = task_text.rstrip("\n") + "\n\n" + standing_text + "\n"
+        (workspace / TASK_NAME).write_text(task_text, encoding="utf-8")
         if debrief:
             (workspace / DEBRIEF_NAME).write_text(
                 render_debrief_markdown(
@@ -329,6 +338,7 @@ class PlaySession:
             debrief_stakes=bool(episode.get("debrief_stakes", False)),
             credit_objective=bool(episode.get("credit_objective", False)),
             self_certify=bool(episode.get("self_certify", False)),
+            ledger=bool(episode.get("ledger", False)),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -428,6 +438,10 @@ class PlaySession:
         # (STAGE8.md).
         if self.debrief_stakes and self.self_certify:
             episode["self_certify"] = True
+        # Absent means no engagement ledger: recorded only when the client
+        # record is announced (STAGE11.md).
+        if self.ledger:
+            episode["ledger"] = True
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:
