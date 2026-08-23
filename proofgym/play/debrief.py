@@ -271,27 +271,31 @@ def settle_debrief(
 def read_debrief_answers(
     workspace: Path,
     questions: Sequence[DebriefQuestion],
+    *,
+    filename: str = DEBRIEF_ANSWERS_NAME,
 ) -> tuple[dict[str, bool] | None, str | None, str | None]:
-    """Load and validate the player's ``debrief.json``.
+    """Load and validate the player's answers file.
 
     Args:
         workspace: Player workspace directory.
         questions: Expected questionnaire.
+        filename: Answers file to read. Defaults to ``debrief.json``; the
+            confrontation round reads ``debrief2.json`` (STAGE9.md).
 
     Returns:
         ``(answers, notes, error)``. A missing file yields
         ``(None, None, None)``; a malformed one yields ``(None, None, error)``.
         Extra keys beyond the questionnaire and ``notes`` are ignored.
     """
-    path = workspace / DEBRIEF_ANSWERS_NAME
+    path = workspace / filename
     if not path.is_file():
         return None, None, None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        return None, None, f"unreadable {DEBRIEF_ANSWERS_NAME}: {exc}"
+        return None, None, f"unreadable {filename}: {exc}"
     if not isinstance(payload, Mapping):
-        return None, None, f"{DEBRIEF_ANSWERS_NAME} must be a JSON object"
+        return None, None, f"{filename} must be a JSON object"
     answers: dict[str, bool] = {}
     for question in questions:
         value = payload.get(question.question_id)

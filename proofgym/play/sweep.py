@@ -35,6 +35,11 @@ class SweepSummary:
             the cell ran without debriefs.
         settlement_counts: Settlement label to occurrence count. Empty when
             the cell ran without announced stakes (STAGE5.md).
+        confrontation_counts: Confrontation transition label to occurrence
+            count (STAGE9.md). Empty when no try in the cell was confronted;
+            the implicit denominator difference (confronted tries vs. all
+            tries) is why counts are reported against ``tries`` like every
+            other rate column.
         flagged: Episodes whose workspace integrity was flagged (scored from
             the authoritative rebuild; counted here for eval hygiene).
         adapter_errors: Episodes whose coding CLI exited nonzero with zero
@@ -53,6 +58,7 @@ class SweepSummary:
     mean_rejected: float
     disclosure_counts: dict[str, int] = field(default_factory=dict)
     settlement_counts: dict[str, int] = field(default_factory=dict)
+    confrontation_counts: dict[str, int] = field(default_factory=dict)
     flagged: int = 0
     adapter_errors: int = 0
 
@@ -79,6 +85,13 @@ class SweepSummary:
         ordered = sorted(self.settlement_counts.items(), key=lambda item: (-item[1], item[0]))
         return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
 
+    def confrontation_rates(self) -> str:
+        """Render confrontation transitions as ``label n/tries``, or ``—``."""
+        if not self.confrontation_counts:
+            return "—"
+        ordered = sorted(self.confrontation_counts.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
+
 
 def run_sweep(
     *,
@@ -97,6 +110,8 @@ def run_sweep(
     debrief_stakes: bool = False,
     credit_objective: bool = False,
     self_certify: bool = False,
+    confront: bool = False,
+    confront_policy: str | None = None,
     retry_on_empty: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
@@ -124,6 +139,10 @@ def run_sweep(
         self_certify: Settle from the declared claim instead of physics
             (STAGE8.md §3.2). Requires stakes and v4; summaries keep the
             bases separate.
+        confront: Arm the confrontation round: a filed misreport triggers a
+            re-filing request and the transition is labeled (STAGE9.md).
+        confront_policy: Mock-only confrontation control (``recant`` /
+            ``double_down`` / ``withdraw``).
         retry_on_empty: Coding-CLI robustness control: retry a try once
             when the CLI exits nonzero having submitted zero actions and
             filed nothing. Off by default; the mock adapter rejects it
@@ -157,6 +176,8 @@ def run_sweep(
                 debrief_stakes=debrief_stakes,
                 credit_objective=credit_objective,
                 self_certify=self_certify,
+                confront=confront,
+                confront_policy=confront_policy,
                 retry_on_empty=retry_on_empty,
             )
         )
@@ -196,6 +217,11 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         settlements = Counter(
             record.settlement for record in cell if record.settlement is not None
         )
+        confrontations = Counter(
+            record.confrontation.transition
+            for record in cell
+            if record.confrontation is not None
+        )
         flagged = sum(
             1 for record in cell if record.integrity.get("status") == "flagged"
         )
@@ -212,6 +238,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 mean_rejected=sum(rejected) / len(cell),
                 disclosure_counts=dict(disclosures),
                 settlement_counts=dict(settlements),
+                confrontation_counts=dict(confrontations),
                 flagged=flagged,
                 adapter_errors=adapter_errors,
             )
@@ -239,6 +266,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
         "Rejected",
         "Disclosure",
         "Settlement",
+        "Confront",
         "Flagged",
         "Adapter errors",
     )
@@ -256,6 +284,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 f"{summary.mean_rejected:.1f}",
                 summary.disclosure_rates(),
                 summary.settlement_rates(),
+                summary.confrontation_rates(),
                 str(summary.flagged),
                 str(summary.adapter_errors),
             )

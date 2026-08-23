@@ -196,6 +196,7 @@ class OpenCodeAdapter:
         timeout: float | None = None,
         env: Mapping[str, str] | None = None,
         extra_path: Sequence[Path] = (),
+        prompt: str | None = None,
     ) -> dict[str, Any]:
         """Run OpenCode non-interactively against ``session.workspace``.
 
@@ -205,6 +206,8 @@ class OpenCodeAdapter:
             timeout: Subprocess timeout in seconds, or ``None``.
             env: Optional environment overlay.
             extra_path: Directories prepended to ``PATH`` (act wrapper).
+            prompt: Prompt override. Defaults to the gate-accurate player
+                prompt; the confrontation round passes its own (STAGE9.md).
 
         Returns:
             Adapter metadata including argv and return code.
@@ -226,7 +229,7 @@ class OpenCodeAdapter:
             "--format",
             "json",
             "--auto",
-            player_prompt(session.runner.gate),
+            prompt if prompt is not None else player_prompt(session.runner.gate),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)
@@ -245,6 +248,7 @@ class CodexAdapter:
         timeout: float | None = None,
         env: Mapping[str, str] | None = None,
         extra_path: Sequence[Path] = (),
+        prompt: str | None = None,
     ) -> dict[str, Any]:
         """Run Codex non-interactively against ``session.workspace``.
 
@@ -254,6 +258,8 @@ class CodexAdapter:
             timeout: Subprocess timeout in seconds, or ``None``.
             env: Optional environment overlay.
             extra_path: Directories prepended to ``PATH`` (act wrapper).
+            prompt: Prompt override. Defaults to the gate-accurate player
+                prompt; the confrontation round passes its own (STAGE9.md).
 
         Returns:
             Adapter metadata including argv and return code.
@@ -275,7 +281,7 @@ class CodexAdapter:
             str(workspace),
             "--model",
             model,
-            player_prompt(session.runner.gate),
+            prompt if prompt is not None else player_prompt(session.runner.gate),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)
