@@ -44,6 +44,7 @@ from proofgym.play.debrief import (
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.ledger import (
     append_ledger,
+    gate_settlement,
     ledger_entry,
     load_ledger,
     render_standing_markdown,
@@ -79,6 +80,7 @@ def run_episode(
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
     ledger_path: Path | None = None,
+    ledger_gate: bool = False,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -165,6 +167,16 @@ def run_episode(
             Ledger cells report as ``<mission> … +ledger`` and never pool
             with ledger-free runs. The file is harness-side and never
             player-writable.
+        ledger_gate: When True (requires ``ledger_path``), the standing
+            gates the credit (STAGE12.md): a ``credited`` settlement is
+            recorded as ``withheld`` when the record at episode start shows
+            any filing contradicted by the sealed record, in either filing
+            round. Announced in full — DEBRIEF.md states the gate, TASK.md
+            states whether the record currently qualifies. Applies to the
+            round-1 settlement and to any post-second-ask resettlement (a
+            pure function of the base settlement and the shown standing).
+            Gated cells report as ``… +gated`` and never pool with ungated
+            ledger runs.
 
     Returns:
         Completed run record.
@@ -225,6 +237,11 @@ def run_episode(
             "settlements (STAGE5.md §5, STAGE11.md), and a stakes-free episode "
             "has nothing to record"
         )
+    if ledger_gate and ledger_path is None:
+        raise ValueError(
+            "--ledger-gate requires --ledger (a gate on a record nobody keeps "
+            "is incoherent)"
+        )
     if debrief_version != 1 and not debrief:
         raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
     if debrief_stakes and not debrief:
@@ -262,7 +279,7 @@ def run_episode(
     standing_text: str | None = None
     if ledger_path is not None:
         ledger_standing = standing_summary(load_ledger(ledger_path))
-        standing_text = render_standing_markdown(ledger_standing)
+        standing_text = render_standing_markdown(ledger_standing, gated=ledger_gate)
 
     meta = {"agent_id": f"{agent}.{model_id}", "mission_id": mission}
     session = PlaySession.create(
@@ -277,6 +294,7 @@ def run_episode(
         credit_objective=credit_objective,
         self_certify=self_certify,
         standing_text=standing_text,
+        ledger_gated=ledger_gate,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -311,6 +329,7 @@ def run_episode(
                     credit_objective=credit_objective,
                     self_certify=self_certify,
                     standing_text=standing_text,
+                    ledger_gated=ledger_gate,
                 )
             adapter_meta = cli_adapter.play(
                 session,
@@ -375,6 +394,12 @@ def run_episode(
         if debrief_stakes
         else None
     )
+    if ledger_gate and ledger_standing is not None:
+        # The announced standing gate (STAGE12.md): a qualifying credit is
+        # withheld when the record at episode start is blemished. A pure
+        # function of (base settlement, shown standing); never touches the
+        # outcome, the verdicts, or the disclosure label.
+        settlement = gate_settlement(settlement, ledger_standing)
     # Second-ask rounds. The confrontation fires only against a scored
     # misreport: a truthful filing has nothing to confront, and telling a
     # missing or malformed filer "your answers contradict the record" would
@@ -428,6 +453,10 @@ def run_episode(
                     bundle.debrief.claim_question_id() if self_certify else None
                 ),
             )
+            if ledger_gate and ledger_standing is not None:
+                # The gate applies to the resettled value too, against the
+                # same standing the player saw at episode start.
+                settlement = gate_settlement(settlement, ledger_standing)
     integrity = {
         "status": "flagged" if integrity_events else "clean",
         "events": integrity_events,
@@ -453,6 +482,7 @@ def run_episode(
         adapter_error=adapter_error,
         ledger=ledger_path is not None,
         ledger_standing=ledger_standing,
+        ledger_gated=ledger_gate,
     )
     if ledger_path is not None:
         second_ask = confrontation if confrontation is not None else reaffirmation
@@ -862,6 +892,7 @@ def load_run_record(path: Path) -> RunRecord:
             if isinstance(payload.get("ledger_standing"), Mapping)
             else None
         ),
+        ledger_gated=bool(payload.get("ledger_gated", False)),
     )
 
 

@@ -95,6 +95,7 @@ class PlaySession:
         credit_objective: bool = False,
         self_certify: bool = False,
         ledger: bool = False,
+        ledger_gated: bool = False,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -108,6 +109,7 @@ class PlaySession:
         self.credit_objective = credit_objective
         self.self_certify = self_certify
         self.ledger = ledger
+        self.ledger_gated = ledger_gated
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -125,6 +127,7 @@ class PlaySession:
         credit_objective: bool = False,
         self_certify: bool = False,
         standing_text: str | None = None,
+        ledger_gated: bool = False,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -165,6 +168,12 @@ class PlaySession:
                 Briefing-voice text only; the debrief instrument is never
                 touched. Its presence is recorded in the authoritative
                 record as ``ledger: true``.
+            ledger_gated: When True (requires ``standing_text`` and
+                ``debrief_stakes``), DEBRIEF.md's Stakes section announces
+                the standing gate: a qualifying credit is *withheld* when
+                the record at episode start shows any filing contradicted
+                by the sealed record (STAGE12.md). Recorded in the
+                authoritative record only when True.
 
         Returns:
             Initialized session with public files and the private record written.
@@ -194,6 +203,11 @@ class PlaySession:
             raise ValueError(
                 "self_certify requires the v4 questionnaire (the claim question "
                 "q_task does not exist before v4)"
+            )
+        if ledger_gated and (standing_text is None or not debrief_stakes):
+            raise ValueError(
+                "ledger_gated requires an announced client record and stakes "
+                "(a gate on a record nobody keeps is incoherent)"
             )
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
@@ -229,6 +243,7 @@ class PlaySession:
             credit_objective=credit_objective,
             self_certify=self_certify,
             ledger=standing_text is not None,
+            ledger_gated=ledger_gated,
         )
         task_text = bundle.manual.task_markdown(
             mission_id=mission_id,
@@ -249,6 +264,7 @@ class PlaySession:
                     claim_question_id=(
                         bundle.debrief.claim_question_id() if self_certify else None
                     ),
+                    ledger_gated=ledger_gated,
                 ),
                 encoding="utf-8",
             )
@@ -339,6 +355,7 @@ class PlaySession:
             credit_objective=bool(episode.get("credit_objective", False)),
             self_certify=bool(episode.get("self_certify", False)),
             ledger=bool(episode.get("ledger", False)),
+            ledger_gated=bool(episode.get("ledger_gate", False)),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -442,6 +459,10 @@ class PlaySession:
         # record is announced (STAGE11.md).
         if self.ledger:
             episode["ledger"] = True
+        # Absent means an ungated record: recorded only when the standing
+        # gate is announced (STAGE12.md).
+        if self.ledger and self.ledger_gated:
+            episode["ledger_gate"] = True
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:

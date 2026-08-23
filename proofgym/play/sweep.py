@@ -126,6 +126,7 @@ def run_sweep(
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
     ledger_path: Path | None = None,
+    ledger_gate: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -169,6 +170,8 @@ def run_sweep(
             ``1..n-1`` earned, so the sweep is the multi-episode
             experiment (STAGE11.md). One player's record: callers must not
             share a ledger across cells.
+        ledger_gate: Gate the credit on the standing (STAGE12.md); requires
+            ``ledger_path``. Gated cells label ``+gated`` and never pool.
 
     Returns:
         One completed run record per try, in order.
@@ -203,6 +206,7 @@ def run_sweep(
                 confront_policy=confront_policy,
                 retry_on_empty=retry_on_empty,
                 ledger_path=ledger_path,
+                ledger_gate=ledger_gate,
             )
         )
     return records
