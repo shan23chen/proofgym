@@ -268,6 +268,20 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "verbatim, withdraw files nothing. Live players respond freely."
         ),
     )
+    parser.add_argument(
+        "--retry-on-empty",
+        action="store_true",
+        help=(
+            "Coding-CLI robustness control: when the CLI exits nonzero "
+            "having submitted zero actions and filed nothing (an adapter "
+            "error, not player behavior), discard that attempt and start "
+            "the episode once more; the discarded attempt is recorded in "
+            "the adapter metadata. Off by default; mock runs reject it. A "
+            "run whose final attempt still fails is marked adapter_error "
+            "either way, so sweeps can separate harness casualties from "
+            "player silence (docs/ADAPTER_ROBUSTNESS.md)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -303,6 +317,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 self_certify=args.self_certify,
                 confront=_confront_enabled(args),
                 confront_policy=args.confront_policy,
+                retry_on_empty=args.retry_on_empty,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -356,6 +371,7 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             self_certify=args.self_certify,
                             confront=_confront_enabled(args),
                             confront_policy=args.confront_policy,
+                            retry_on_empty=args.retry_on_empty,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -409,6 +425,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             self_certify=args.self_certify,
                             confront=_confront_enabled(args),
                             confront_policy=args.confront_policy,
+                            retry_on_empty=args.retry_on_empty,
                         )
                     )
     except AdapterNotInstalledError as exc:

@@ -59,6 +59,13 @@ class RunRecord:
             never fired (not armed, or nothing to confront). When present,
             ``settlement`` holds the final (post-confrontation) settlement
             and the round-1 settlement lives inside this block.
+        adapter_error: Whether the coding CLI exited nonzero having
+            submitted zero actions and filed nothing — an absent player,
+            distinct from a player that chose silence. The episode is still
+            scored by the normal rules (the labels are correct bookkeeping);
+            the marker exists so analysts can separate harness casualties
+            from behavior in disclosure and settlement denominators
+            (docs/ADAPTER_ROBUSTNESS.md).
     """
 
     agent: str
@@ -76,6 +83,7 @@ class RunRecord:
     self_certified: bool = False
     confront: bool = False
     confrontation: ConfrontationVerdict | None = None
+    adapter_error: bool = False
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -114,6 +122,7 @@ class RunRecord:
                 "confrontation": (
                     self.confrontation.to_dict() if self.confrontation is not None else None
                 ),
+                "adapter_error": self.adapter_error,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -149,6 +158,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Settlement",
         "Confront",
         "Integrity",
+        "Adapter",
     )
     rows: list[tuple[str, ...]] = []
     for record in records:
@@ -166,6 +176,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.settlement if record.settlement is not None else "—",
                 record.confrontation.transition if record.confrontation is not None else "—",
                 str(record.integrity.get("status", "clean")),
+                "error" if record.adapter_error else "ok",
             )
         )
     return _table(header, rows)
@@ -237,6 +248,13 @@ def format_one_row_report(record: RunRecord) -> str:
             f"({kinds}). The verdict above was scored from the harness's "
             "authoritative in-process replay, not from the on-disk record; "
             "archive this run for eval-hygiene review.\n"
+        )
+    if record.adapter_error:
+        document += (
+            "\n**Adapter error:** the coding CLI exited nonzero having "
+            "submitted zero actions and filed nothing. This row records an "
+            "absent player, not player behavior; exclude it from disclosure "
+            "and settlement denominators (docs/ADAPTER_ROBUSTNESS.md).\n"
         )
     return document
 

@@ -322,6 +322,14 @@ authenticated on the machine running the eval. They are not installed in CI.
 If a binary is missing, `proofgym run` fails with an install hint; it does not
 skip silently.
 
+A CLI run that exits nonzero having submitted zero actions and filed nothing
+is marked `adapter_error` in `verdict.json` — an absent player, distinct from
+a player that chose silence — and counted per cell in sweep tables.
+`--retry-on-empty` (off by default) discards one such attempt and restarts
+the episode once, recording the discarded attempt in the adapter metadata.
+See [docs/ADAPTER_ROBUSTNESS.md](docs/ADAPTER_ROBUSTNESS.md) for the
+classification rules and the default-off rationale.
+
 ### OpenCode
 
 Install (pick one):
