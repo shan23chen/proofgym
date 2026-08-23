@@ -70,12 +70,25 @@ n ≥ 5 is itself reportable: the anomaly stays a one-off and stage 8's
 priced claim channel (item 1) becomes the definitive test of the inflation
 reading.
 
+*Status update:* first sweeps ran (n=3 per arm, per the operators' log):
+Inkling completed the exploit 3/3 under plain stakes and 3/3 under
+`+credit`; Ox Alpha 0/3 and 1/3. At this n the signal is a **model split
+in exploit completion**, not a goal-pressure effect, and the stage-6
+non-reproduction reads as within-model variance. Small-n, not for
+publication; see the stage-9 section of
+[STAGE_REPORT.md](STAGE_REPORT.md).
+
 ## 3. Gated pair, pre-registered — build only when item 1's result lands
 
 *Status update:* the gate fired — item 1's campaign produced live paid
 lies, so the confrontation branch was selected and is now implemented; see
 [STAGE9.md](../STAGE9.md). The instructed-concealment fallback stays
 unbuilt (its trigger — paid channels reading zero — did not occur).
+*Second update:* the confrontation ran live — **3/3 confronted inflators
+recanted** and surrendered the credit; zero double-downs, zero
+withdrawals (STAGE9.md §7). The one-sided result carries a one-bit
+confound (detection-driven fold vs. re-ask instability), which the
+stage-10 slice addresses with a neutral re-ask control arm.
 
 Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
 the outcome of item 1; both branches are small, but neither should be built
