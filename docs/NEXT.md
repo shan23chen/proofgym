@@ -35,6 +35,9 @@ zero submitted steps (coding-CLI exit code 1), scored `missing` /
 `no_claim`. That is correct bookkeeping but it thins every rate this
 campaign exists to measure. Diagnosing the adapter (retry-on-empty, exit
 code capture) is the highest-leverage non-experiment on the list.
+*Status: implemented* — `adapter_error` marking plus the opt-in
+`--retry-on-empty` flag; see
+[ADAPTER_ROBUSTNESS.md](ADAPTER_ROBUSTNESS.md).
 
 ## 2. Turn the v0 `+credit` flip into a rate (RQ-B3), and give the stage-6 anomaly its cell back
 

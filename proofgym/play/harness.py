@@ -23,6 +23,7 @@ from proofgym.play.adapters import (
     write_act_wrapper,
 )
 from proofgym.play.debrief import (
+    DEBRIEF_ANSWERS_NAME,
     DisclosureVerdict,
     read_debrief_answers,
     score_debrief,
@@ -30,7 +31,7 @@ from proofgym.play.debrief import (
 )
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
-from proofgym.play.session import PlaySession
+from proofgym.play.session import PlaySession, private_dir_for
 from proofgym.z3check.checker import Z3Checker
 
 CLI_AGENTS = frozenset({"opencode", "codex"})
@@ -53,6 +54,7 @@ def run_episode(
     debrief_stakes: bool = False,
     credit_objective: bool = False,
     self_certify: bool = False,
+    retry_on_empty: bool = False,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -95,6 +97,13 @@ def run_episode(
             consulted, and the Stakes announcement says so (STAGE8.md §3.2).
             Requires ``debrief_stakes`` and the v4 questionnaire. Bases
             never pool.
+        retry_on_empty: Coding-CLI robustness control (off by default; the
+            mock adapter rejects it). When the CLI exits nonzero having
+            submitted zero actions and filed nothing — an *adapter error*,
+            not player behavior — discard that attempt, start one fresh
+            episode, and record the discarded attempt in the adapter
+            metadata. A run whose final attempt still fails is marked
+            ``adapter_error`` either way (docs/ADAPTER_ROBUSTNESS.md).
 
     Returns:
         Completed run record.
@@ -106,8 +115,9 @@ def run_episode(
             debrief policy is passed for a non-mock agent, a non-default
             debrief version is requested without a debrief, stakes are
             requested without a debrief / with the v1 questionnaire, the
-            credit objective is requested without stakes, or
-            self-certification is requested without stakes / below v4.
+            credit objective is requested without stakes,
+            self-certification is requested without stakes / below v4, or
+            retry-on-empty is requested for a non-CLI agent.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -115,6 +125,11 @@ def run_episode(
         raise ValueError(f"--model is required for agent {agent!r}")
     if debrief_policy is not None and agent != "mock":
         raise ValueError("--debrief-policy is a mock-only control; live players answer freely")
+    if retry_on_empty and agent not in CLI_AGENTS:
+        raise ValueError(
+            "--retry-on-empty is a coding-CLI robustness control; the mock adapter "
+            "cannot fail to start and CI runs must stay deterministic"
+        )
     if debrief_version != 1 and not debrief:
         raise ValueError("--debrief-version requires --debrief (a questionnaire nobody is asked)")
     if debrief_stakes and not debrief:
@@ -163,25 +178,53 @@ def run_episode(
     write_act_wrapper(bin_dir, workspace, pythonpath=pythonpath)
 
     adapter_meta: dict[str, Any]
+    adapter_error = False
     if agent == "mock":
         actions = script_actions(mission, script)
         adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
-    elif agent == "opencode":
-        adapter_meta = OpenCodeAdapter().play(
-            session,
-            model=model_id,
-            timeout=timeout,
-            extra_path=(bin_dir,),
-        )
-        session = PlaySession.load(workspace)
-    elif agent == "codex":
-        adapter_meta = CodexAdapter().play(
-            session,
-            model=model_id,
-            timeout=timeout,
-            extra_path=(bin_dir,),
-        )
-        session = PlaySession.load(workspace)
+    elif agent in CLI_AGENTS:
+        cli_adapter = OpenCodeAdapter() if agent == "opencode" else CodexAdapter()
+        failed_attempts: list[dict[str, Any]] = []
+        max_attempts = 2 if retry_on_empty else 1
+        for attempt in range(1, max_attempts + 1):
+            if attempt > 1:
+                # The failed attempt never engaged the episode (no steps, no
+                # filing), so the retry discards it wholesale and starts a
+                # byte-fresh episode. The discarded attempt is preserved in
+                # the adapter metadata, never hidden.
+                shutil.rmtree(workspace, ignore_errors=True)
+                shutil.rmtree(private_dir_for(workspace), ignore_errors=True)
+                session = PlaySession.create(
+                    workspace,
+                    world_name=world_name,
+                    mission_id=mission,
+                    meta=meta,
+                    gate=gate,
+                    debrief=debrief,
+                    debrief_version=debrief_version,
+                    debrief_stakes=debrief_stakes,
+                    credit_objective=credit_objective,
+                    self_certify=self_certify,
+                )
+            adapter_meta = cli_adapter.play(
+                session,
+                model=model_id,
+                timeout=timeout,
+                extra_path=(bin_dir,),
+            )
+            session = PlaySession.load(workspace)
+            adapter_error = _cli_attempt_failed(
+                adapter_meta.get("returncode"),
+                session.to_trace(),
+                workspace,
+            )
+            if not adapter_error or attempt == max_attempts:
+                break
+            failed_attempts.append(_failed_attempt_summary(adapter_meta))
+        if retry_on_empty:
+            adapter_meta["retry_on_empty"] = True
+        if failed_attempts:
+            adapter_meta["failed_attempts"] = failed_attempts
     else:
         raise KeyError(f"unknown agent: {agent}")
 
@@ -244,9 +287,60 @@ def run_episode(
         settlement=settlement,
         credit_objective=credit_objective,
         self_certified=self_certify,
+        adapter_error=adapter_error,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
+
+
+def _cli_attempt_failed(returncode: Any, trace: Trace, workspace: Path) -> bool:
+    """Return whether a coding-CLI attempt was an adapter failure.
+
+    An attempt is an *adapter error* only when all three hold: the CLI
+    exited nonzero, no action was ever submitted, and no debrief answers
+    were filed — the process died before engaging the episode at all
+    (the live "zero-step, exit code 1" class). Everything short of that is
+    player behavior and is never retried or marked:
+
+    - zero steps with exit code 0 is deliberate silence (a measured
+      strategy — see STAGE3.md RQ-D4 and STAGE5.md RQ-S5);
+    - zero steps with a filed ``debrief.json`` is a refusal that reported
+      itself (the stage-6 escape route, STAGE6.md §4.3);
+    - a nonzero exit *after* submitting steps is a partial episode with the
+      return code already recorded in the adapter metadata.
+
+    Args:
+        returncode: CLI exit status from the adapter metadata.
+        trace: Authoritative episode trace at the end of the attempt.
+        workspace: Player workspace (checked for a debrief filing).
+
+    Returns:
+        True when the attempt records an absent player.
+    """
+    if returncode == 0:
+        return False
+    if trace.steps:
+        return False
+    if (workspace / DEBRIEF_ANSWERS_NAME).is_file():
+        return False
+    return True
+
+
+def _failed_attempt_summary(meta: Mapping[str, Any]) -> dict[str, Any]:
+    """Condense a discarded CLI attempt for the adapter metadata.
+
+    Args:
+        meta: Full adapter metadata of the failed attempt.
+
+    Returns:
+        Return code plus a bounded stderr tail (enough to diagnose the
+        crash without bloating ``verdict.json``).
+    """
+    stderr = str(meta.get("stderr") or "")
+    return {
+        "returncode": meta.get("returncode"),
+        "stderr_tail": stderr[-500:],
+    }
 
 
 def _rebuild_authoritative_trace(
@@ -433,6 +527,7 @@ def load_run_record(path: Path) -> RunRecord:
         settlement=str(settlement_raw) if settlement_raw is not None else None,
         credit_objective=bool(payload.get("credit_objective", False)),
         self_certified=bool(payload.get("self_certified", False)),
+        adapter_error=bool(payload.get("adapter_error", False)),
     )
 
 

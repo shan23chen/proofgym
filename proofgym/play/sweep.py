@@ -37,6 +37,10 @@ class SweepSummary:
             the cell ran without announced stakes (STAGE5.md).
         flagged: Episodes whose workspace integrity was flagged (scored from
             the authoritative rebuild; counted here for eval hygiene).
+        adapter_errors: Episodes whose coding CLI exited nonzero with zero
+            submitted actions and no filing — absent players, not behavior.
+            Counted so live rates can be read against an honest denominator
+            (docs/ADAPTER_ROBUSTNESS.md).
     """
 
     agent: str
@@ -50,6 +54,7 @@ class SweepSummary:
     disclosure_counts: dict[str, int] = field(default_factory=dict)
     settlement_counts: dict[str, int] = field(default_factory=dict)
     flagged: int = 0
+    adapter_errors: int = 0
 
     def outcome_rates(self) -> str:
         """Render outcome counts as ``label n/tries`` fragments.
@@ -92,6 +97,7 @@ def run_sweep(
     debrief_stakes: bool = False,
     credit_objective: bool = False,
     self_certify: bool = False,
+    retry_on_empty: bool = False,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -118,6 +124,10 @@ def run_sweep(
         self_certify: Settle from the declared claim instead of physics
             (STAGE8.md §3.2). Requires stakes and v4; summaries keep the
             bases separate.
+        retry_on_empty: Coding-CLI robustness control: retry a try once
+            when the CLI exits nonzero having submitted zero actions and
+            filed nothing. Off by default; the mock adapter rejects it
+            (docs/ADAPTER_ROBUSTNESS.md).
 
     Returns:
         One completed run record per try, in order.
@@ -147,6 +157,7 @@ def run_sweep(
                 debrief_stakes=debrief_stakes,
                 credit_objective=credit_objective,
                 self_certify=self_certify,
+                retry_on_empty=retry_on_empty,
             )
         )
     return records
@@ -188,6 +199,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         flagged = sum(
             1 for record in cell if record.integrity.get("status") == "flagged"
         )
+        adapter_errors = sum(1 for record in cell if record.adapter_error)
         summaries.append(
             SweepSummary(
                 agent=key[0],
@@ -201,6 +213,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 disclosure_counts=dict(disclosures),
                 settlement_counts=dict(settlements),
                 flagged=flagged,
+                adapter_errors=adapter_errors,
             )
         )
     return summaries
@@ -227,6 +240,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
         "Disclosure",
         "Settlement",
         "Flagged",
+        "Adapter errors",
     )
     rows: list[tuple[str, ...]] = []
     for summary in summaries:
@@ -243,6 +257,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 summary.disclosure_rates(),
                 summary.settlement_rates(),
                 str(summary.flagged),
+                str(summary.adapter_errors),
             )
         )
     widths = [len(title) for title in header]

@@ -49,6 +49,13 @@ class RunRecord:
             claim answer instead of physics task success (STAGE8.md §3.2).
             Bases are distinct conditions; tables label the mission cell
             ``+cert`` and sweeps never pool across the flag.
+        adapter_error: Whether the coding CLI exited nonzero having
+            submitted zero actions and filed nothing — an absent player,
+            distinct from a player that chose silence. The episode is still
+            scored by the normal rules (the labels are correct bookkeeping);
+            the marker exists so analysts can separate harness casualties
+            from behavior in disclosure and settlement denominators
+            (docs/ADAPTER_ROBUSTNESS.md).
     """
 
     agent: str
@@ -64,6 +71,7 @@ class RunRecord:
     settlement: str | None = None
     credit_objective: bool = False
     self_certified: bool = False
+    adapter_error: bool = False
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -98,6 +106,7 @@ class RunRecord:
                 "settlement": self.settlement,
                 "credit_objective": self.credit_objective,
                 "self_certified": self.self_certified,
+                "adapter_error": self.adapter_error,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -132,6 +141,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Disclosure",
         "Settlement",
         "Integrity",
+        "Adapter",
     )
     rows: list[tuple[str, ...]] = []
     for record in records:
@@ -148,6 +158,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.disclosure.label if record.disclosure is not None else "—",
                 record.settlement if record.settlement is not None else "—",
                 str(record.integrity.get("status", "clean")),
+                "error" if record.adapter_error else "ok",
             )
         )
     return _table(header, rows)
@@ -205,6 +216,13 @@ def format_one_row_report(record: RunRecord) -> str:
             f"({kinds}). The verdict above was scored from the harness's "
             "authoritative in-process replay, not from the on-disk record; "
             "archive this run for eval-hygiene review.\n"
+        )
+    if record.adapter_error:
+        document += (
+            "\n**Adapter error:** the coding CLI exited nonzero having "
+            "submitted zero actions and filed nothing. This row records an "
+            "absent player, not player behavior; exclude it from disclosure "
+            "and settlement denominators (docs/ADAPTER_ROBUSTNESS.md).\n"
         )
     return document
 
