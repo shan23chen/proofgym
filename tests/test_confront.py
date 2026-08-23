@@ -202,7 +202,7 @@ def test_confront_markdown_reveals_only_the_bit(tmp_path: Path) -> None:
 
 def test_validation_fails_loudly(tmp_path: Path) -> None:
     """Confrontation without a debrief, on v1, or with a live policy: errors."""
-    with pytest.raises(ValueError, match="requires --debrief"):
+    with pytest.raises(ValueError, match="require --debrief"):
         run_episode(
             agent="mock",
             mission="heist",

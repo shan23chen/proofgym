@@ -40,6 +40,9 @@ class SweepSummary:
             the implicit denominator difference (confronted tries vs. all
             tries) is why counts are reported against ``tries`` like every
             other rate column.
+        reaffirmation_counts: Neutral re-ask transition label to occurrence
+            count (STAGE10.md). Separate from the confrontation counts —
+            the two arms never pool.
         flagged: Episodes whose workspace integrity was flagged (scored from
             the authoritative rebuild; counted here for eval hygiene).
         adapter_errors: Episodes whose coding CLI exited nonzero with zero
@@ -59,6 +62,7 @@ class SweepSummary:
     disclosure_counts: dict[str, int] = field(default_factory=dict)
     settlement_counts: dict[str, int] = field(default_factory=dict)
     confrontation_counts: dict[str, int] = field(default_factory=dict)
+    reaffirmation_counts: dict[str, int] = field(default_factory=dict)
     flagged: int = 0
     adapter_errors: int = 0
 
@@ -92,6 +96,13 @@ class SweepSummary:
         ordered = sorted(self.confrontation_counts.items(), key=lambda item: (-item[1], item[0]))
         return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
 
+    def reaffirmation_rates(self) -> str:
+        """Render neutral re-ask transitions as ``label n/tries``, or ``—``."""
+        if not self.reaffirmation_counts:
+            return "—"
+        ordered = sorted(self.reaffirmation_counts.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(f"{label} {count}/{self.tries}" for label, count in ordered)
+
 
 def run_sweep(
     *,
@@ -111,6 +122,7 @@ def run_sweep(
     credit_objective: bool = False,
     self_certify: bool = False,
     confront: bool = False,
+    reaffirm: bool = False,
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
 ) -> list[RunRecord]:
@@ -141,8 +153,12 @@ def run_sweep(
             bases separate.
         confront: Arm the confrontation round: a filed misreport triggers a
             re-filing request and the transition is labeled (STAGE9.md).
-        confront_policy: Mock-only confrontation control (``recant`` /
-            ``double_down`` / ``withdraw``).
+        reaffirm: Arm the neutral re-ask: every readable filing triggers an
+            uninformative re-filing request (STAGE10.md). Mutually exclusive
+            with ``confront``.
+        confront_policy: Mock-only second-ask control (``recant`` /
+            ``double_down`` / ``withdraw`` / ``self_serving``), shared by
+            both arms.
         retry_on_empty: Coding-CLI robustness control: retry a try once
             when the CLI exits nonzero having submitted zero actions and
             filed nothing. Off by default; the mock adapter rejects it
@@ -177,6 +193,7 @@ def run_sweep(
                 credit_objective=credit_objective,
                 self_certify=self_certify,
                 confront=confront,
+                reaffirm=reaffirm,
                 confront_policy=confront_policy,
                 retry_on_empty=retry_on_empty,
             )
@@ -222,6 +239,11 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
             for record in cell
             if record.confrontation is not None
         )
+        reaffirmations = Counter(
+            record.reaffirmation.transition
+            for record in cell
+            if record.reaffirmation is not None
+        )
         flagged = sum(
             1 for record in cell if record.integrity.get("status") == "flagged"
         )
@@ -239,6 +261,7 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
                 disclosure_counts=dict(disclosures),
                 settlement_counts=dict(settlements),
                 confrontation_counts=dict(confrontations),
+                reaffirmation_counts=dict(reaffirmations),
                 flagged=flagged,
                 adapter_errors=adapter_errors,
             )
@@ -267,6 +290,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
         "Disclosure",
         "Settlement",
         "Confront",
+        "Reaffirm",
         "Flagged",
         "Adapter errors",
     )
@@ -285,6 +309,7 @@ def format_sweep_table(summaries: Sequence[SweepSummary]) -> str:
                 summary.disclosure_rates(),
                 summary.settlement_rates(),
                 summary.confrontation_rates(),
+                summary.reaffirmation_rates(),
                 str(summary.flagged),
                 str(summary.adapter_errors),
             )
