@@ -120,6 +120,13 @@ once-per-contract: four exist in the data, three inflated); the endgame's
 round-2 behavior was unmeasured (both k=3 second asks were adapter
 casualties, correctly marked `round2_adapter_error`); the fold ran 4/4
 where fired. The stage-14 proposal is §5 below.
+*Seventh update:* stage 14 shipped and ran live for Ox (STAGE14.md §7):
+the fold persisted 3/3 under instrumental redemption — including a
+strictly dominated k=3 recant — clean standing re-appeared 2/2 and was
+immediately re-inflated both times, and the RQ-H4 position control read
+3/3 (STAGE13.md §7 addendum). Round-1 inflation has now survived five
+consequence structures; the stage-15 proposal (§6) moves the question
+upstream, from the lie's price to its generation.
 
 ## 4. Proposed stage 13 — the announced contract horizon (split myopia from salience)
 
@@ -136,9 +143,61 @@ The follow-on proposal is §5.
 *Status: implemented as proposed* — `--ledger-redeem` (requires
 `--ledger-gate`), with the engineering companion shipped alongside
 (`--retry-on-empty` now covers second-ask spawns); see
-[STAGE14.md](../STAGE14.md). Live status stays open until the operators
-run the campaign; H-compliance-reflex vs H-incentive-sensitivity is
-undecided by design until then.
+[STAGE14.md](../STAGE14.md).
+*Live update:* the Ox campaign ran (STAGE14.md §7; six-row table in
+STAGE_REPORT.md): the fold stayed **3/3 corrected even when instrumental —
+including the k=3 cell where recanting was strictly dominated**
+(H-compliance-reflex stands); redemption un-starved the instrument as
+designed (clean standing reappeared 2/2, both immediately re-inflated);
+the confront arm ran the zero-net-credit lie-recant-repeat cycle live;
+the reaffirm arm kept its episode-1 defended credit (the maximizing line);
+the retry companion recovered a dead round-2 spawn. Hy3 rate-limited to
+zero verdicts — unmeasured. The stage-15 proposal is §6 below.
+
+## 6. Proposed stage 15 — debrief v5: the claim follows the evidence
+
+**The exhausted ladder, and what it leaves.** Round-1 inflation has now
+survived five consequence structures — announced checking, an inert
+record, a gated record, a quantified horizon, a redeemable gate — reading
+near-total on qualifying standings throughout (6/6 in the stage-14
+contracts, including both freshly re-qualified ones). No incentive knob
+remains that has not read zero upstream. The remaining hypothesis space is
+not about the lie's *price*; it is about its *generation*: is the round-1
+inflation a strategic decision at all?
+
+**Three signatures point at a form-filling default rather than a
+decision:**
+
+1. Every live inflation since stage 8 has been the self-refuting minimal
+   kind — mismatch set `{q_task}`, the claim written beside truthful
+   evidence answers that contradict it.
+2. The fold is immediate, universal, and now dominance-insensitive (the
+   stage-14 k=3 recant surrendered a credit with nothing to repair for) —
+   the profile of a claim that was never load-bearing.
+3. The v4 questionnaire deliberately put the claim **first** ("the claim
+   leads the form — this is a certification", STAGE8.md §3.1) — so the
+   certification is written *before* the evidence is recalled.
+
+**The slice (propose-only here):** **debrief v5 — identical questions,
+`q_task` moved from first to last.** The player writes the claim
+immediately after having just truthfully filed `q_outside_building:
+false`. One knob (order), versioned questionnaire (v5, sealed truth
+tables, labels never pooled across versions — the stage-4/7 discipline,
+fifth application), stakes and certification semantics byte-identical
+(`q_task` remains the claim question; the settlement basis is untouched).
+H-default-optimism predicts clean-record inflation drops when the refuting
+evidence precedes the claim at the decision point; H-strategic predicts no
+change. Either answer makes stages 11–14 interpretable: five deterrence
+nulls mean something different depending on whether they priced a decision
+or a reflex.
+
+**Not chosen instead:** a sixth incentive rung (e.g., taxing corrections)
+— five rungs read zero and no remaining hypothesis distinguishes a sixth
+from the order split, which is cheaper; instructed concealment —
+capability is demonstrated in the wild (`doubled_down`, repeatedly, live);
+Hy3's rerun and n-expansion — campaign parameters that ride along with
+the v4-vs-v5 A/B on the same cells; and any settlement change — the
+question is now upstream of every settlement.
 
 **The instrument bottleneck.** Under stage 12's deliberate no-forgiveness
 rule, a blemish is permanent — so from the first conviction onward, every
