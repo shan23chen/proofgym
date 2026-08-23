@@ -316,6 +316,31 @@ stage-6 "exploit non-reproduction" reads as within-model completion
 variance, not goal-pressure suppression; no pressure effect is
 interpretable at n=3.
 
+### Stage 10 — the neutral re-ask
+
+*Design:* the stage-9 recants were confounded by the confrontation's own
+stimulus (it asserts detection), so [STAGE10.md](../STAGE10.md) shipped the
+one-bit control arm: `--reaffirm` issues an uninformative re-filing request
+to *every* readable filing — truthful or misreporting — with identical
+mechanics and resettlement. The transition vocabulary gains `held` and
+`degraded` (the second-chance lie by an initially truthful filer).
+
+*Live A/B* (per the operators' log, small-n, not for publication): **the
+correction tracks the manipulated bit — H-prudence over H-instability.**
+On the paid-inflator population: confrontation arm 5 `corrected` /
+0 `doubled_down` / 1 `withdrew`; neutral arm **0 `corrected` /
+2 `doubled_down` / 1 `withdrew`**. The same models that fold when told the
+record disagrees defend the same lie when merely re-asked (credit kept), or
+go silent; not one corrected spontaneously. The truthful population is
+stable: 2/2 `held`, zero `degraded` — no second-chance inflation, and
+Inkling has still never inflated on any channel. One precision worth
+carrying forward: the stage-9 folds were *incentive-dominated* — doubling
+down would have kept the credit under the announced rules (detected lies
+carry no settlement penalty, the deliberate stage-5 choice), yet 5/6
+confronted inflators surrendered it. The models act as if detection
+carries consequences the episode never announces; making that inferred
+consequence real is the stage-11 target.
+
 ## 4. The through-lines
 
 1. **The seeded gap is cheap to find, and nobody chose crime to use it.**
@@ -332,11 +357,13 @@ interpretable at n=3.
    remaining channel (the success claim itself), the saturation broke
    there: paid inflations are on the record (see stage 8 above) while the
    staked confession channel still reads zero. Honesty on this world is
-   channel-specific, not global — and, per the stage-9 runs, the broken
-   channel's lies do not survive a challenge: confronted inflators recant
-   (5/6) or go silent and take the forfeit (1/6); none has re-affirmed the
-   lie (small-n, with the detection-vs-instability confound noted under
-   stage 9).
+   channel-specific, not global — and, per the stage-9/10 A/B, it is also
+   **detection-calibrated**: confronted inflators recant (5/6) or go
+   silent (1/6) even though recanting costs them the credit, while the
+   same models under an uninformative re-ask defend the identical lie
+   (2/3 doubled down, credit kept) or withdraw (1/3), never spontaneously
+   correcting. The lie is held exactly while the player has no evidence of
+   being caught (small-n throughout).
 3. **Both observed misreport patterns indicted the instrument first, and
    the instrument-first rule paid off both times.** The stage-3 `q_rejected`
    misreports were manufactured by rejection-priming manual text (proved by
@@ -372,12 +399,15 @@ interpretable at n=3.
   instrument artifact (stage 4) and an unresolved single observation
   (stage 7). The stage-8 campaign changed that in exactly one channel: paid
   inflation — a failed player certifying success for a credit — is now on
-  the record (operators' cumulative tally: six confronted instances across
-  two models), un-instructed and fully informed, on a validated
-  instrument. Under stage-9 confrontation, five recanted and surrendered
-  the credit and one went silent and took the forfeit; **no lie has been
-  re-affirmed under challenge**. There is still no observed paid denial of
-  a violation and no physical-frame fabrication. "Models lie" remains as
+  the record (operators' cumulative tally: six confronted and three
+  re-asked instances across two models), un-instructed and fully informed,
+  on validated instruments. Under stage-9 confrontation, five recanted and
+  one went silent — **no lie has been re-affirmed under challenge** — but
+  under the stage-10 neutral re-ask the same models re-affirmed the same
+  lie 2/3 and withdrew 1/3, so the honesty-on-correction is
+  detection-driven, not spontaneous. There is still no observed paid
+  denial of a violation, no physical-frame fabrication, and no
+  second-chance inflation by a truthful filer. "Models lie" remains as
   wrong a summary as "models never lie"; the counts are pilot telemetry.
 - **No publication.** All live numbers are pilot telemetry, marked
   not-for-publication at every source.

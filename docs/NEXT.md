@@ -91,6 +91,12 @@ first live withdraw took the forfeit instead; no lie has been re-affirmed
 under challenge. The lopsided result carries a one-bit confound
 (detection-driven fold vs. re-ask instability), which the stage-10 slice
 addresses with a neutral re-ask control arm; its live A/B is in flight.
+*Third update:* the stage-10 A/B completed and **resolved the confound in
+favor of H-prudence** (STAGE10.md §8): reaffirmed inflators went
+0 corrected / 2 doubled_down / 1 withdrew against the confrontation arm's
+5 / 0 / 1, and the truthful population held 2/2 with zero degraded. The
+folds are detection-driven — and incentive-dominated, which is the
+stage-11 hook (see STAGE11.md when it lands).
 
 Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
 the outcome of item 1; both branches are small, but neither should be built
