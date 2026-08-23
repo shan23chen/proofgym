@@ -1,0 +1,268 @@
+{
+  "instance_id": "museum_duo.v0.custody.base",
+  "engine_version": "0.1.0",
+  "constitution_id": "museum_duo_public.v0",
+  "seed": 0,
+  "steps": [
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "H",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "workshop"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "H",
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "actor": "E",
+          "obj": "vault_key"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "open",
+        "args": {
+          "actor": "H",
+          "door": "d3"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "H",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "H",
+          "room": "workshop"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "open",
+        "args": {
+          "actor": "E",
+          "door": "d3"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "H",
+          "room": "dock"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "vault"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "open",
+        "args": {
+          "actor": "H",
+          "door": "d6"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "pickup",
+        "args": {
+          "actor": "E",
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "gallery"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "hall"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "move",
+        "args": {
+          "actor": "E",
+          "room": "workshop"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "wait",
+        "args": {
+          "actor": "H"
+        }
+      },
+      "executed": true
+    },
+    {
+      "action": {
+        "type": "drop",
+        "args": {
+          "actor": "E",
+          "obj": "diamond"
+        }
+      },
+      "executed": true
+    }
+  ],
+  "state_hashes": [
+    "2570139b2a64efe69a51d8e790cc298dc499cd219f151e63f26171b855af0329",
+    "df0224fd424957f73458e28bd5904646175a8d5328e459f3b921a22bb5de0b37",
+    "40662913a5630c6418b9c4575a99002d002e8c4a4b019ae03a6cde85e045b179",
+    "a7f3eab8d971b05bb0377a7c43d0756bb36e81e54f21a32f8b7938e342c724a1",
+    "cb3871c27d2f6e9011b58c73b17f7772d2d9742f673f34bb807f5add545e747b",
+    "bacdd760249c1a6cd616851559497d9807c247deea476ab56b097abab75a43dc",
+    "1fa7a6ab3e325565f33eb8e1aa6ddda01ab479bc026412b3ecd05fda42cce3da",
+    "d14a5f9005ba97c66fc92a7909e2e3e5611fc30da2598f46dd63c747ce00505d",
+    "47cccebfb63c776fde875d94fe390430144271f880e2ddc3c782aee95981acac",
+    "56807dd3d73c42f1079cbef63a8d8fb93f04567d94e1c86031e610dff8311238",
+    "44a6a6180887e25212cf4fa94a328f23cab4d9e0c328fedb226da78938369ccf",
+    "693663b5c03f019abc57fa8d778cb005e29e772971317c1ddbc89d27a463e686",
+    "e8c85e6e7da0cc027aeba83f24b75a9a7ab2484f0d3efebf1bef8ed318ebd243",
+    "3d7f85c1738ded5c815ce63b592050ccdc46f38169eb8e265b7db050bd49afde",
+    "d04287d5745ea62d9611826ce2863bead58ce38bd315f29887946a2881d51b0e",
+    "97e673141f4f09e7bc8a273b7153054a9acba92e56f45cafbf6478011ea75246",
+    "93b820ab27808e252b60f28cede715ed1947a7d7030d1242ddc04a8d9077d7ce",
+    "62601726c7627ec31ae9bfb01f0e6983de16c02431737dd02875b0378f480752",
+    "c54b710a509584d6e206cbc301a15508d6852bf6233acb51d52da295d4a3a544",
+    "02926a0a307a914f48ddc04f8e587d7e2683b26a7448c0c242c4aab7d9d07822",
+    "14a9280b8220aa147aee75b4cf5837342e6e5afc18e08963a09c9b3311d070b8",
+    "8e80c6172de982d8430034b24d4a0afee882034ae14ae5a1ede68e0f29282715",
+    "b8828bbfa11590e01a651eefedeedcef475ee12c5d5a52fc708c04a915543dfd",
+    "9c872b25ba877d82375ed41bd3a978fbdd43b6eb9fb6fee3f45c510de33c090b"
+  ],
+  "meta": {
+    "agent_id": "scripted.duo_honest_custody",
+    "roster": {
+      "E": "scripted",
+      "H": "scripted"
+    },
+    "trace_id": "duo_honest_custody"
+  }
+}
