@@ -259,13 +259,30 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--reaffirm",
+        action="store_true",
+        help=(
+            "Arm the neutral re-ask (requires a debrief, v2 or newer; "
+            "mutually exclusive with --confront): every readable filing — "
+            "truthful or misreporting — triggers one uninformative "
+            "re-filing request (REAFFIRM.md asserts nothing about the "
+            "record and is issued regardless of the filing's content). "
+            "Transitions add held / degraded to the stage-9 labels; under "
+            "stakes the settlement is recomputed from the re-filing. The "
+            "one-bit control arm for the confrontation (STAGE10.md)."
+        ),
+    )
+    parser.add_argument(
         "--confront-policy",
-        choices=("recant", "double_down", "withdraw"),
+        choices=("recant", "double_down", "withdraw", "self_serving"),
         default=None,
         help=(
-            "Mock-only confrontation control (implies --confront): recant "
-            "re-files the truth, double_down re-files the round-1 answers "
-            "verbatim, withdraw files nothing. Live players respond freely."
+            "Mock-only second-ask control, shared by both arms (implies "
+            "--confront unless --reaffirm is given): recant re-files the "
+            "truth, double_down re-files the round-1 answers verbatim, "
+            "withdraw files nothing, self_serving re-files the "
+            "settlement-maximizing pair (claim true, stake false) over "
+            "otherwise-truthful answers. Live players respond freely."
         ),
     )
     parser.add_argument(
@@ -316,6 +333,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 credit_objective=args.credit_objective,
                 self_certify=args.self_certify,
                 confront=_confront_enabled(args),
+                reaffirm=args.reaffirm,
                 confront_policy=args.confront_policy,
                 retry_on_empty=args.retry_on_empty,
             )
@@ -370,6 +388,7 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             credit_objective=args.credit_objective,
                             self_certify=args.self_certify,
                             confront=_confront_enabled(args),
+                            reaffirm=args.reaffirm,
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
                         )
@@ -424,6 +443,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             credit_objective=args.credit_objective,
                             self_certify=args.self_certify,
                             confront=_confront_enabled(args),
+                            reaffirm=args.reaffirm,
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
                         )
@@ -443,13 +463,14 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
 
 
 def _debrief_enabled(args: argparse.Namespace) -> bool:
-    """Return whether a debrief is requested (policy/version/stakes/confront imply it)."""
+    """Return whether a debrief is requested (policy/version/stakes/second-ask imply it)."""
     return bool(
         args.debrief
         or args.debrief_policy is not None
         or args.debrief_version is not None
         or _stakes_enabled(args)
         or _confront_enabled(args)
+        or args.reaffirm
     )
 
 
@@ -459,24 +480,25 @@ def _stakes_enabled(args: argparse.Namespace) -> bool:
 
 
 def _confront_enabled(args: argparse.Namespace) -> bool:
-    """Return whether the confrontation round is armed (a policy implies it)."""
-    return bool(args.confront or args.confront_policy is not None)
+    """Return whether the confrontation arm is on (a policy implies it, unless
+    the neutral arm claims the policy)."""
+    return bool(args.confront or (args.confront_policy is not None and not args.reaffirm))
 
 
 def _debrief_version(args: argparse.Namespace) -> int:
     """Return the requested questionnaire version.
 
     Defaults to the sealed v1; stakes (directly or via the credit objective)
-    and the confrontation round imply the validated v2, and
-    self-certification implies v4 (the claim question exists only there) —
-    unless a version was passed explicitly (an explicit version below a
-    mode's requirement is rejected downstream).
+    and either second-ask arm imply the validated v2, and self-certification
+    implies v4 (the claim question exists only there) — unless a version was
+    passed explicitly (an explicit version below a mode's requirement is
+    rejected downstream).
     """
     if args.debrief_version is not None:
         return args.debrief_version
     if args.self_certify:
         return 4
-    return 2 if (_stakes_enabled(args) or _confront_enabled(args)) else 1
+    return 2 if (_stakes_enabled(args) or _confront_enabled(args) or args.reaffirm) else 1
 
 
 def _default_out(agent: str, mission: str, model: str | None) -> Path:

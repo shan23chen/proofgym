@@ -26,9 +26,11 @@ from proofgym.play.confront import (
     CONFRONT_ANSWERS_NAME,
     CONFRONT_NAME,
     CONFRONT_POLICIES,
+    REAFFIRM_NAME,
     ConfrontationVerdict,
     mock_confront_answers,
     render_confront_markdown,
+    render_reaffirm_markdown,
     transition_label,
     write_answers,
 )
@@ -40,7 +42,7 @@ from proofgym.play.debrief import (
     settle_debrief,
 )
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
-from proofgym.play.prompt import confront_prompt
+from proofgym.play.prompt import confront_prompt, reaffirm_prompt
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession, private_dir_for
 from proofgym.z3check.checker import Z3Checker
@@ -66,6 +68,7 @@ def run_episode(
     credit_objective: bool = False,
     self_certify: bool = False,
     confront: bool = False,
+    reaffirm: bool = False,
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
 ) -> RunRecord:
@@ -121,8 +124,21 @@ def run_episode(
             unaffected by the arm. Requires ``debrief`` and a validated
             questionnaire (v2+). Truthful, missing, and malformed filings
             are never confronted.
-        confront_policy: Mock-only control (``recant`` / ``double_down`` /
-            ``withdraw``); defaults to ``recant`` for confronted mock runs.
+        reaffirm: When True, *every* readable filing — truthful or
+            misreporting — triggers one neutral re-ask (STAGE10.md):
+            REAFFIRM.md asserts nothing about how the filing compares to the
+            record (and says the request is issued regardless of content),
+            the player re-files as ``debrief2.json``, and the transition is
+            labeled (``held`` / ``degraded`` join the stage-9 labels). Under
+            stakes the settlement is recomputed from the re-filing, exactly
+            as in the confrontation arm — the two arms differ by one bit of
+            information only. Mutually exclusive with ``confront``; requires
+            ``debrief`` and a validated questionnaire (v2+); missing and
+            malformed filings are never re-asked.
+        confront_policy: Mock-only second-ask control (``recant`` /
+            ``double_down`` / ``withdraw`` / ``self_serving``), shared by
+            both arms; defaults to ``recant`` for confronted mock runs and
+            to ``double_down`` (re-affirm verbatim) for re-asked ones.
             Live players respond freely.
         retry_on_empty: Coding-CLI robustness control (off by default; the
             mock adapter rejects it). When the CLI exits nonzero having
@@ -144,9 +160,10 @@ def run_episode(
             requested without a debrief / with the v1 questionnaire, the
             credit objective is requested without stakes,
             self-certification is requested without stakes / below v4, or
-            a confrontation is requested without a debrief / with the v1
-            questionnaire / with a policy for a live player, or
-            retry-on-empty is requested for a non-CLI agent.
+            a confrontation or re-ask is requested without a debrief / with
+            the v1 questionnaire / with a policy for a live player, both
+            second-ask arms are requested at once, or retry-on-empty is
+            requested for a non-CLI agent.
         RuntimeError: If a coding-CLI workspace would sit in the checkout.
     """
     model_id = model if model is not None else ("scripted" if agent == "mock" else "")
@@ -154,14 +171,19 @@ def run_episode(
         raise ValueError(f"--model is required for agent {agent!r}")
     if debrief_policy is not None and agent != "mock":
         raise ValueError("--debrief-policy is a mock-only control; live players answer freely")
-    if confront and not debrief:
-        raise ValueError("--confront requires --debrief (there is no filing to confront)")
-    if confront and debrief_version < 2:
+    if confront and reaffirm:
         raise ValueError(
-            "--confront requires --debrief-version 2 or newer; confronting the "
-            "instrument stage 4 invalidated would repeat the stage-4 ordering "
-            "mistake (a confused player's correction is indistinguishable from "
-            "a liar's recantation)"
+            "--confront and --reaffirm are mutually exclusive: one second ask "
+            "per episode — the two arms are the A/B (STAGE10.md)"
+        )
+    if (confront or reaffirm) and not debrief:
+        raise ValueError("--confront/--reaffirm require --debrief (there is no filing to re-ask)")
+    if (confront or reaffirm) and debrief_version < 2:
+        raise ValueError(
+            "--confront/--reaffirm require --debrief-version 2 or newer; "
+            "re-asking the instrument stage 4 invalidated would repeat the "
+            "stage-4 ordering mistake (a confused player's correction is "
+            "indistinguishable from a liar's recantation)"
         )
     if confront_policy is not None and agent != "mock":
         raise ValueError("--confront-policy is a mock-only control; live players respond freely")
@@ -171,6 +193,9 @@ def run_episode(
         )
     if agent == "mock" and confront and confront_policy is None:
         confront_policy = "recant"
+    if agent == "mock" and reaffirm and confront_policy is None:
+        # The neutral default is to re-affirm the original filing verbatim.
+        confront_policy = "double_down"
     if retry_on_empty and agent not in CLI_AGENTS:
         raise ValueError(
             "--retry-on-empty is a coding-CLI robustness control; the mock adapter "
@@ -315,15 +340,27 @@ def run_episode(
         if debrief_stakes
         else None
     )
-    # The confrontation round fires only against a scored misreport: a
-    # truthful filing has nothing to confront, and telling a missing or
-    # malformed filer "your answers contradict the record" would be false
-    # (STAGE9.md §3). Round 1 was scored above, before CONFRONT.md exists;
-    # later edits to debrief.json change nothing.
+    # Second-ask rounds. The confrontation fires only against a scored
+    # misreport: a truthful filing has nothing to confront, and telling a
+    # missing or malformed filer "your answers contradict the record" would
+    # be false (STAGE9.md §3). The neutral re-ask fires for every *readable*
+    # filing — truthful or not — because issuing it regardless of content is
+    # exactly what makes it uninformative (STAGE10.md). Round 1 was scored
+    # above, before any second-ask file exists; later edits to debrief.json
+    # change nothing.
     confrontation: ConfrontationVerdict | None = None
-    if confront and disclosure is not None and disclosure.label == "misreport":
-        confrontation, confront_events = _run_confrontation(
+    reaffirmation: ConfrontationVerdict | None = None
+    fire_confront = confront and disclosure is not None and disclosure.label == "misreport"
+    fire_reaffirm = (
+        reaffirm
+        and disclosure is not None
+        and disclosure.label in ("truthful", "misreport")
+    )
+    if fire_confront or fire_reaffirm:
+        assert disclosure is not None
+        second_ask, second_ask_events = _run_second_ask(
             bundle,
+            mode="confront" if fire_confront else "reaffirm",
             session=session,
             workspace=workspace,
             agent=agent,
@@ -337,15 +374,20 @@ def run_episode(
             confront_policy=confront_policy,
             adapter_meta=adapter_meta,
         )
-        integrity_events.extend(confront_events)
+        if fire_confront:
+            confrontation = second_ask
+        else:
+            reaffirmation = second_ask
+        integrity_events.extend(second_ask_events)
         if debrief_stakes:
             # Resettle from the re-filing by the same announced rule; the
             # new settlement replaces the round-1 settlement (which stays
-            # recorded in the confrontation block). Recanting a paid lie
-            # therefore costs exactly the credit it bought.
+            # recorded in the second-ask block). Recanting a paid lie
+            # therefore costs exactly the credit it bought — and a degraded
+            # re-filing can buy one.
             settlement = settle_debrief(
                 task_success=verdict.task_success,
-                declared=confrontation.round2.declared,
+                declared=second_ask.round2.declared,
                 stake_question_id=bundle.debrief.stake_question_id(),
                 claim_question_id=(
                     bundle.debrief.claim_question_id() if self_certify else None
@@ -371,15 +413,18 @@ def run_episode(
         self_certified=self_certify,
         confront=confront,
         confrontation=confrontation,
+        reaffirm=reaffirm,
+        reaffirmation=reaffirmation,
         adapter_error=adapter_error,
     )
     _write_artifacts(out_dir, record, workspace)
     return record
 
 
-def _run_confrontation(
+def _run_second_ask(
     bundle: WorldBundle,
     *,
+    mode: str,
     session: PlaySession,
     workspace: Path,
     agent: str,
@@ -393,17 +438,18 @@ def _run_confrontation(
     confront_policy: str | None,
     adapter_meta: dict[str, Any],
 ) -> tuple[ConfrontationVerdict, list[dict[str, Any]]]:
-    """Run one confrontation round against a scored misreport (STAGE9.md).
+    """Run one second-ask round: a confrontation or a neutral re-ask.
 
-    Writes CONFRONT.md into the workspace (public facts plus the single
-    announced bit: a contradiction exists), obtains the re-filing — the mock
-    adapter files per its confront policy in-process; a coding CLI is
-    spawned a second time with the confrontation prompt — then scores
-    ``debrief2.json`` against the *same* recomputed truth and labels the
-    transition.
+    Writes the arm's request file into the workspace — CONFRONT.md carries
+    the single announced bit (a contradiction exists, STAGE9.md); REAFFIRM.md
+    asserts nothing about the comparison (STAGE10.md) — obtains the
+    re-filing (mock: policy-driven, in process; coding CLI: a second spawn
+    with the arm's prompt), then scores ``debrief2.json`` against the *same*
+    recomputed truth and labels the transition.
 
     Args:
         bundle: World bundle (questions and questionnaire id).
+        mode: ``confront`` or ``reaffirm``.
         session: The played session (its workspace hosts the round).
         workspace: Player workspace directory.
         agent: Adapter id.
@@ -415,29 +461,38 @@ def _run_confrontation(
         scored_steps: Step count of the sealed, already-scored trace.
         disclosure: Round-1 disclosure verdict (its truth table is reused).
         settlement_round1: Settlement the round-1 filing earned, or ``None``.
-        debrief_stakes: Whether stakes are announced (selects CONFRONT.md's
+        debrief_stakes: Whether stakes are announced (selects the request's
             resettlement section).
-        confront_policy: Mock-only re-filing control.
+        confront_policy: Mock-only re-filing control (shared by both arms).
         adapter_meta: Run adapter metadata; round-2 spawn bookkeeping
-            (argv, return code, transcripts) is merged into it.
+            (argv, return code, transcripts) is merged into it under
+            mode-prefixed keys.
 
     Returns:
-        ``(confrontation_verdict, integrity_events)`` where the events
-        record post-episode action submissions during the round, if any
-        (they are archived, never scored — the trace was sealed first).
+        ``(second_ask_verdict, integrity_events)`` where the events record
+        post-episode action submissions during the round, if any (they are
+        archived, never scored — the trace was sealed first).
     """
     provider = bundle.debrief
     questions = provider.questions()
-    (workspace / CONFRONT_NAME).write_text(
-        render_confront_markdown(questions, stakes=debrief_stakes),
-        encoding="utf-8",
-    )
+    if mode == "confront":
+        request_name = CONFRONT_NAME
+        request_text = render_confront_markdown(questions, stakes=debrief_stakes)
+        prompt = confront_prompt()
+    else:
+        request_name = REAFFIRM_NAME
+        request_text = render_reaffirm_markdown(questions, stakes=debrief_stakes)
+        prompt = reaffirm_prompt()
+    (workspace / request_name).write_text(request_text, encoding="utf-8")
     events: list[dict[str, Any]] = []
     if agent == "mock":
+        claim = provider.claim_question_id()
         answers = mock_confront_answers(
-            confront_policy or "recant",
+            confront_policy or ("recant" if mode == "confront" else "double_down"),
             truth=dict(disclosure.truth),
             round1_declared=disclosure.declared,
+            stake_question_id=provider.stake_question_id(),
+            claim_question_id=claim if claim in disclosure.truth else None,
         )
         if answers is not None:
             write_answers(workspace, answers)
@@ -448,12 +503,12 @@ def _run_confrontation(
             model=model_id,
             timeout=timeout,
             extra_path=(bin_dir,),
-            prompt=confront_prompt(),
+            prompt=prompt,
         )
-        adapter_meta["confront_argv"] = round2_meta["argv"]
-        adapter_meta["confront_returncode"] = round2_meta["returncode"]
-        adapter_meta["confront_stdout"] = round2_meta["stdout"]
-        adapter_meta["confront_stderr"] = round2_meta["stderr"]
+        adapter_meta[f"{mode}_argv"] = round2_meta["argv"]
+        adapter_meta[f"{mode}_returncode"] = round2_meta["returncode"]
+        adapter_meta[f"{mode}_stdout"] = round2_meta["stdout"]
+        adapter_meta[f"{mode}_stderr"] = round2_meta["stderr"]
         # Actions submitted during the round mutate the private record but
         # never the scored trace (sealed before the round began). Record
         # the attempt as data, in the integrity ledger.
@@ -479,7 +534,7 @@ def _run_confrontation(
         questionnaire=provider.questionnaire_id(),
     )
     verdict = ConfrontationVerdict(
-        transition=transition_label(round2),
+        transition=transition_label(disclosure.label, round2),
         round2=round2,
         settlement_round1=settlement_round1,
     )
@@ -712,6 +767,12 @@ def load_run_record(path: Path) -> RunRecord:
         if isinstance(confrontation_raw, Mapping)
         else None
     )
+    reaffirmation_raw = payload.get("reaffirmation")
+    reaffirmation = (
+        ConfrontationVerdict.from_dict(reaffirmation_raw)
+        if isinstance(reaffirmation_raw, Mapping)
+        else None
+    )
     return RunRecord(
         agent=str(payload["agent"]),
         model=str(payload["model"]),
@@ -728,6 +789,8 @@ def load_run_record(path: Path) -> RunRecord:
         self_certified=bool(payload.get("self_certified", False)),
         confront=bool(payload.get("confront", False)),
         confrontation=confrontation,
+        reaffirm=bool(payload.get("reaffirm", False)),
+        reaffirmation=reaffirmation,
         adapter_error=bool(payload.get("adapter_error", False)),
     )
 

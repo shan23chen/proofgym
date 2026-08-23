@@ -59,6 +59,16 @@ class RunRecord:
             never fired (not armed, or nothing to confront). When present,
             ``settlement`` holds the final (post-confrontation) settlement
             and the round-1 settlement lives inside this block.
+        reaffirm: Whether the run was armed for the neutral re-ask
+            (STAGE10.md) — the control arm that asserts nothing about the
+            record. Mutually exclusive with ``confront``; like it, invisible
+            during play. The arms never pool: they live in separate fields
+            and separate table columns.
+        reaffirmation: The neutral re-ask verdict, or ``None`` when the
+            round never fired (not armed, or no readable filing). Same
+            shape and settlement semantics as ``confrontation``; adds the
+            ``held`` and ``degraded`` transitions reachable only from a
+            truthful round 1.
         adapter_error: Whether the coding CLI exited nonzero having
             submitted zero actions and filed nothing — an absent player,
             distinct from a player that chose silence. The episode is still
@@ -83,6 +93,8 @@ class RunRecord:
     self_certified: bool = False
     confront: bool = False
     confrontation: ConfrontationVerdict | None = None
+    reaffirm: bool = False
+    reaffirmation: ConfrontationVerdict | None = None
     adapter_error: bool = False
 
     def mission_label(self) -> str:
@@ -122,13 +134,25 @@ class RunRecord:
                 "confrontation": (
                     self.confrontation.to_dict() if self.confrontation is not None else None
                 ),
+                "reaffirm": self.reaffirm,
+                "reaffirmation": (
+                    self.reaffirmation.to_dict() if self.reaffirmation is not None else None
+                ),
                 "adapter_error": self.adapter_error,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
                     key: value
                     for key, value in self.adapter.items()
-                    if key not in {"stdout", "stderr", "confront_stdout", "confront_stderr"}
+                    if key
+                    not in {
+                        "stdout",
+                        "stderr",
+                        "confront_stdout",
+                        "confront_stderr",
+                        "reaffirm_stdout",
+                        "reaffirm_stderr",
+                    }
                 },
             }
         )
@@ -157,6 +181,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Disclosure",
         "Settlement",
         "Confront",
+        "Reaffirm",
         "Integrity",
         "Adapter",
     )
@@ -175,6 +200,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 record.disclosure.label if record.disclosure is not None else "—",
                 record.settlement if record.settlement is not None else "—",
                 record.confrontation.transition if record.confrontation is not None else "—",
+                record.reaffirmation.transition if record.reaffirmation is not None else "—",
                 str(record.integrity.get("status", "clean")),
                 "error" if record.adapter_error else "ok",
             )
@@ -237,6 +263,20 @@ def format_one_row_report(record: RunRecord) -> str:
                 f" Settlement re-settled from the re-filing: round 1 "
                 f"`{confrontation.settlement_round1}`, final "
                 f"`{record.settlement}` (STAGE9.md)."
+            )
+        document += "\n"
+    if record.reaffirmation is not None:
+        reaffirmation = record.reaffirmation
+        document += (
+            "\n**Re-asked** (neutral re-filing request, issued regardless of "
+            f"the filing's content): the player **{reaffirmation.transition}** "
+            f"(round-2 label `{reaffirmation.round2.label}`)."
+        )
+        if reaffirmation.settlement_round1 is not None:
+            document += (
+                f" Settlement re-settled from the re-filing: round 1 "
+                f"`{reaffirmation.settlement_round1}`, final "
+                f"`{record.settlement}` (STAGE10.md)."
             )
         document += "\n"
     if record.integrity.get("status") == "flagged":
