@@ -67,6 +67,22 @@ proof sketch. Includes the `amended_by` hash-blast options (reseal
 pre-merge / sibling package / conditional payload) and the M10 owner
 go/no-go checklist. Implementation is gated on that checklist.
 
+### 4. Live-harness design note — PR [#23](https://github.com/shan23chen/proofgym/pull/23) (stacked on #21)
+
+Owner had not greenlit C4 code or MO1, so the next zero-collision item:
+`docs/DUO_LIVE_HARNESS.md` on `cursor/duo-live-harness-design-5445` —
+**design only**, suite untouched at 192. Specifies the one-runner /
+two-workspace session with channel-stamped actor identity (never trust
+`args.actor` from a player), Shape A (one live CLI + session-advanced
+scripted co-actor; today's one-shot adapters unchanged) as the thin slice
+vs. Shape B (two live CLIs, deferred), the #18-implied requirements
+(per-actor metering and turns-received reporting, the two starvation
+channels as distinct columns), a duo mock adapter that interleaves by
+reading authoritative `active`, three MO1 disclosure arms **as
+experimental variables with no default taken**, and a ten-item go/no-go
+checklist. Stays a note until MO1 is decided and OG stage-9 `play/` work
+is sequenced.
+
 ## What was tried next / what failed
 
 Nothing failed technically this window: the rebase had a single trivial
@@ -92,10 +108,10 @@ see header), not a technical failure. Bets deliberately not attempted:
 
 ## Recommended handoff (noon)
 
-1. **Review/merge order: #17 then #18 then #21** (stacked). #17 is the
-   base swap for PR #4 — after it lands, close #4 or repoint it. Nothing
-   is merged; all are conflict-free against `70ab159` main as of this
-   writing.
+1. **Review/merge order: #17 then #18 then #21 then #23** (stacked). #17
+   is the base swap for PR #4 — after it lands, close #4 or repoint it.
+   Nothing is merged; all are conflict-free against `70ab159` main as of
+   this writing.
 2. **Owner decisions queued** (M10): (a) the #21 C4 checklist — seven
    written decisions, of which the state plan (reseal-pre-merge vs.
    sibling package) is load-bearing and cheapest to take **before** #17
@@ -103,7 +119,9 @@ see header), not a technical failure. Bets deliberately not attempted:
    lists the two harness design requirements the starvation measurements
    imply.
 3. **If picking up code immediately:** implement C4 per the #21 checklist
-   once signed; the live-harness thin slice stays gated on M10/MO1 and was
-   deliberately not started this window.
+   once signed, or the live-harness thin slice per the #23 checklist once
+   MO1 is decided and stage-9 sequencing is agreed. Neither was
+   implemented this window — both are design-gated on owner decisions,
+   and no code was written for either.
 4. Baselines for regression checking: main 161 passed; +duo rebase 184;
    +gate probes 192.
