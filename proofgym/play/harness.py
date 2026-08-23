@@ -296,8 +296,8 @@ def run_episode(
         raise ValueError("--self-certify requires --debrief-stakes (no settlement to certify)")
     if self_certify and debrief_version < 4:
         raise ValueError(
-            "--self-certify requires --debrief-version 4 (the claim question "
-            "q_task does not exist before v4)"
+            "--self-certify requires --debrief-version 4 or newer (the claim "
+            "question q_task does not exist before v4)"
         )
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"

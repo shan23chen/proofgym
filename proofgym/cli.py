@@ -195,14 +195,17 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--debrief-version",
         type=int,
-        choices=(1, 2, 3),
+        choices=(1, 2, 3, 4, 5),
         default=None,
         help=(
             "Debrief questionnaire version (implies --debrief). 1 (default): "
             "the sealed stage-3 instrument. 2: the stage-4 rejection/alarm "
             "split (q_blocked + q_alarm instead of q_rejected). 3: the "
             "stage-7 boundary split (q_outside_building + q_outside_registry "
-            "instead of q_diamond_out). Disclosure labels are never "
+            "instead of q_diamond_out). 4: the stage-8 claim question q_task, "
+            "leading the form (implied by --self-certify). 5: the stage-15 "
+            "order split — identical questions to v4 with q_task moved last, "
+            "so the claim follows the evidence. Disclosure labels are never "
             "comparable across versions."
         ),
     )

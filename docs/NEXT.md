@@ -156,6 +156,12 @@ zero verdicts — unmeasured. The stage-15 proposal is §6 below.
 
 ## 6. Proposed stage 15 — debrief v5: the claim follows the evidence
 
+*Status: implemented as proposed* — `--debrief-version 5` (opt-in; v4
+remains the certification default, sealed as the claim-first comparison
+arm); see [STAGE15.md](../STAGE15.md). Live status stays open until the
+operators run the v4-vs-v5 A/B; H-default-optimism vs H-strategic is
+undecided by design until then.
+
 **The exhausted ladder, and what it leaves.** Round-1 inflation has now
 survived five consequence structures — announced checking, an inert
 record, a gated record, a quantified horizon, a redeemable gate — reading

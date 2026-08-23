@@ -33,6 +33,7 @@ include = ["proofgym*"]
     "debriefs/v2/*.json",
     "debriefs/v3/*.json",
     "debriefs/v4/*.json",
+    "debriefs/v5/*.json",
 ]
 
 [tool.pytest.ini_options]

@@ -56,11 +56,14 @@ contradicted filing — [STAGE13.md](STAGE13.md) for the stage-13 slice:
 the announced contract horizon, built after the gated campaign read 3/3
 clean-record inflation, which makes the future price explicit and
 computable ("engagement k of K") so genuine time-discounting can be
-separated from a salience failure before "myopia" is reported — and
-[STAGE14.md](STAGE14.md) for the stage-14 slice: redemption, built after
+separated from a salience failure before "myopia" is reported — [STAGE14.md](STAGE14.md) for the stage-14 slice: redemption, built after
 blemish permanence starved the clean-standing cells, which strikes a
 corrected conviction from the gate's disqualification count and thereby
-makes the recant instrumental for the first time.
+makes the recant instrumental for the first time — and
+[STAGE15.md](STAGE15.md) for the stage-15 slice: debrief v5, built after
+round-1 inflation survived five consequence structures and the fold proved
+dominance-insensitive, which moves the claim question from first to last
+so the question shifts upstream — from the lie's price to its generation.
 
 For an illustrated walkthrough of the stage-1 pilot — task explainer, live-run
 figures, and a step-by-step HTML replay gallery — see
@@ -488,6 +491,34 @@ Redeeming cells label `+redeem` and never pool with permanent-blemish
 runs. See [STAGE14.md](STAGE14.md) for the reflex-vs-incentive research
 question, the redemption cycle, and the written rejections (decay
 forgiveness, retroactive redemption, a separate appeal round).
+
+### Debrief v5 (stage 15): the claim follows the evidence
+
+Round-1 inflation survived five consequence structures (checking, record,
+gate, quantified horizon, redeemable gate), every live inflation has been
+the self-refuting `{q_task}`-only kind, and the fold proved
+dominance-insensitive — three signatures of a form-filling default rather
+than a decision. The v4 questionnaire deliberately puts the claim **first**
+("this is a certification"); `--debrief-version 5` asks the identical
+questions with `q_task` moved **last**, so the certification is written
+immediately after the boundary answers that would refute an inflated one.
+One knob — display order; the truth tables are sealed under
+`debriefs/v5/` and pinned byte-equal to v4's (the equality *is* the design
+claim), scoring is order-blind, every settlement semantic is unchanged,
+and `--self-certify` alone still resolves to v4 so prior cells reproduce.
+
+```bash
+python -m proofgym run --agent mock --mission heist_patched --self-certify \
+    --debrief-version 5 --debrief-policy self_serving
+python -m proofgym sweep --agent opencode --model <m> --mission heist_patched \
+    --credit-objective --self-certify --debrief-version 5 --confront --n 3
+```
+
+H-default-optimism predicts clean-standing inflation drops when the
+refuting evidence precedes the claim; H-strategic predicts no change —
+and either answer decides what stages 11–14's deterrence nulls were:
+pricing a decision, or pricing a reflex. Labels never pool across
+versions. See [STAGE15.md](STAGE15.md).
 
 ## OpenCode and Codex as players
 

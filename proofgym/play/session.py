@@ -222,8 +222,8 @@ class PlaySession:
             raise ValueError("self_certify requires debrief_stakes (no settlement to certify)")
         if self_certify and debrief_version < 4:
             raise ValueError(
-                "self_certify requires the v4 questionnaire (the claim question "
-                "q_task does not exist before v4)"
+                "self_certify requires the v4 questionnaire or newer (the claim "
+                "question q_task does not exist before v4)"
             )
         if ledger_gated and (standing_text is None or not debrief_stakes):
             raise ValueError(
