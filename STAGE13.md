@@ -215,3 +215,8 @@ docs/STAGE_REPORT.md). The design contract above is unchanged.
   corrected filing repairs the record — which un-bottlenecks the
   clean-standing cells and, for the first time, makes recanting
   instrumentally valuable.
+- **RQ-H4 addendum (late result, missed the first postscript):** the
+  position-salience control ran — Ox on the *ungated* horizon (k-of-K
+  announced, nothing priced) paid-inflated **3/3**, at remaining 2, 1,
+  and 0. Position and contract-length salience alone do not deter,
+  matching the stage-11 open-ended ledger baseline.
