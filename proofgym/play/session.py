@@ -96,6 +96,8 @@ class PlaySession:
         self_certify: bool = False,
         ledger: bool = False,
         ledger_gated: bool = False,
+        ledger_horizon: int | None = None,
+        ledger_position: int | None = None,
         integrity_events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.workspace = workspace
@@ -110,6 +112,8 @@ class PlaySession:
         self.self_certify = self_certify
         self.ledger = ledger
         self.ledger_gated = ledger_gated
+        self.ledger_horizon = ledger_horizon
+        self.ledger_position = ledger_position
         self.integrity_events: list[dict[str, Any]] = list(integrity_events or [])
 
     @classmethod
@@ -128,6 +132,8 @@ class PlaySession:
         self_certify: bool = False,
         standing_text: str | None = None,
         ledger_gated: bool = False,
+        ledger_horizon: int | None = None,
+        ledger_position: int | None = None,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -174,6 +180,14 @@ class PlaySession:
                 the record at episode start shows any filing contradicted
                 by the sealed record (STAGE12.md). Recorded in the
                 authoritative record only when True.
+            ledger_horizon: Announced contract length ``K`` (STAGE13.md).
+                Requires ``standing_text``; the caller (the harness) holds
+                the contract to ``K`` engagements. With ``ledger_gated``
+                the Stakes text additionally states the remaining-credits
+                arithmetic. Recorded in the authoritative record only when
+                set.
+            ledger_position: This episode's position ``k`` (1-based),
+                required with ``ledger_horizon``.
 
         Returns:
             Initialized session with public files and the private record written.
@@ -209,6 +223,13 @@ class PlaySession:
                 "ledger_gated requires an announced client record and stakes "
                 "(a gate on a record nobody keeps is incoherent)"
             )
+        if ledger_horizon is not None and standing_text is None:
+            raise ValueError(
+                "ledger_horizon requires an announced client record "
+                "(a contract length with no contract is incoherent)"
+            )
+        if (ledger_horizon is None) != (ledger_position is None):
+            raise ValueError("horizon and position come together (engagement k of K)")
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
         private_dir.mkdir(parents=True, exist_ok=True)
@@ -244,6 +265,8 @@ class PlaySession:
             self_certify=self_certify,
             ledger=standing_text is not None,
             ledger_gated=ledger_gated,
+            ledger_horizon=ledger_horizon,
+            ledger_position=ledger_position,
         )
         task_text = bundle.manual.task_markdown(
             mission_id=mission_id,
@@ -265,6 +288,8 @@ class PlaySession:
                         bundle.debrief.claim_question_id() if self_certify else None
                     ),
                     ledger_gated=ledger_gated,
+                    ledger_horizon=ledger_horizon if ledger_gated else None,
+                    ledger_position=ledger_position if ledger_gated else None,
                 ),
                 encoding="utf-8",
             )
@@ -356,6 +381,16 @@ class PlaySession:
             self_certify=bool(episode.get("self_certify", False)),
             ledger=bool(episode.get("ledger", False)),
             ledger_gated=bool(episode.get("ledger_gate", False)),
+            ledger_horizon=(
+                int(episode["ledger_horizon"])
+                if episode.get("ledger_horizon") is not None
+                else None
+            ),
+            ledger_position=(
+                int(episode["ledger_position"])
+                if episode.get("ledger_position") is not None
+                else None
+            ),
             integrity_events=list(episode.get("integrity_events") or []),
         )
         new_events = session._audit_mirrors(episode)
@@ -463,6 +498,11 @@ class PlaySession:
         # gate is announced (STAGE12.md).
         if self.ledger and self.ledger_gated:
             episode["ledger_gate"] = True
+        # Absent means an open-ended contract: recorded only when a horizon
+        # is announced (STAGE13.md).
+        if self.ledger and self.ledger_horizon is not None:
+            episode["ledger_horizon"] = self.ledger_horizon
+            episode["ledger_position"] = self.ledger_position
         return episode
 
     def _audit_mirrors(self, episode: Mapping[str, Any]) -> list[dict[str, Any]]:

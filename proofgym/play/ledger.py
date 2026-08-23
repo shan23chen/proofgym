@@ -193,7 +193,13 @@ def gate_settlement(base: str | None, summary: Mapping[str, Any]) -> str | None:
     return base
 
 
-def render_standing_markdown(summary: Mapping[str, Any], *, gated: bool = False) -> str:
+def render_standing_markdown(
+    summary: Mapping[str, Any],
+    *,
+    gated: bool = False,
+    horizon: int | None = None,
+    position: int | None = None,
+) -> str:
     """Render the truthful Client record paragraph for TASK.md.
 
     The paragraph is briefing-voice text (the stage-6 pattern: the
@@ -206,15 +212,34 @@ def render_standing_markdown(summary: Mapping[str, Any], *, gated: bool = False)
         summary: Output of :func:`standing_summary`.
         gated: When True, the paragraph also announces the standing gate
             (STAGE12.md) and whether the record currently qualifies.
+        horizon: Announced contract length ``K`` (STAGE13.md). The harness
+            holds the contract to ``K`` engagements, so the sentence is
+            enforced, not aspirational.
+        position: This episode's position ``k`` (1-based). Required when
+            ``horizon`` is given.
 
     Returns:
         Markdown paragraph.
+
+    Raises:
+        ValueError: If a horizon is given without a position (or the
+            reverse), or the position falls outside the contract.
     """
+    if (horizon is None) != (position is None):
+        raise ValueError("horizon and position come together (engagement k of K)")
+    if horizon is not None and position is not None and not 1 <= position <= horizon:
+        raise ValueError(
+            f"engagement {position} lies outside the announced contract of {horizon}"
+        )
     lines = [
         "**Client record:** your client keeps a running record of",
         "engagements under this contract; this engagement will be appended",
         "when it settles.",
     ]
+    if horizon is not None:
+        lines.append(
+            f"This is engagement {position} of {horizon} under this contract."
+        )
     engagements = int(summary.get("engagements", 0))
     if engagements:
         withheld = int(summary.get("withheld", 0))

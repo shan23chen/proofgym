@@ -332,6 +332,24 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "pool with ungated ledger runs (STAGE12.md)."
         ),
     )
+    parser.add_argument(
+        "--ledger-horizon",
+        type=int,
+        default=None,
+        metavar="K",
+        help=(
+            "Announce the contract's length (requires --ledger): TASK.md "
+            "states 'engagement k of K under this contract', and with "
+            "--ledger-gate the Stakes text states the arithmetic — a filing "
+            "contradicted by the sealed record disqualifies the record for "
+            "the remaining K-k engagements' credits. The harness holds the "
+            "contract to K engagements (an episode beyond the horizon fails "
+            "loudly), so everything announced is enforced. Natural pairing: "
+            "a fresh ledger with a sweep where --n equals K. Horizon cells "
+            "report as '... +horizon' and never pool with open-ended ledger "
+            "runs (STAGE13.md)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -377,6 +395,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 retry_on_empty=args.retry_on_empty,
                 ledger_path=args.ledger,
                 ledger_gate=args.ledger_gate,
+                ledger_horizon=args.ledger_horizon,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -398,10 +417,11 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
-    if args.ledger is not None or args.ledger_gate:
+    if args.ledger is not None or args.ledger_gate or args.ledger_horizon is not None:
         print(
-            "--ledger/--ledger-gate are one player's record and cannot thread "
-            "a cartesian compare; use run or a single-cell sweep",
+            "--ledger/--ledger-gate/--ledger-horizon are one player's record "
+            "and cannot thread a cartesian compare; use run or a single-cell "
+            "sweep",
             file=sys.stderr,
         )
         return 2
@@ -472,6 +492,14 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
+    if args.ledger_horizon is not None and args.tries > args.ledger_horizon:
+        print(
+            f"--n {args.tries} exceeds the announced contract horizon "
+            f"({args.ledger_horizon}): the harness holds the contract to K "
+            "engagements, so the sweep would fail mid-contract",
+            file=sys.stderr,
+        )
+        return 2
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     base = args.out or Path("runs") / f"sweep-{stamp}"
     records = []
@@ -503,6 +531,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             retry_on_empty=args.retry_on_empty,
                             ledger_path=args.ledger,
                             ledger_gate=args.ledger_gate,
+                            ledger_horizon=args.ledger_horizon,
                         )
                     )
     except AdapterNotInstalledError as exc:

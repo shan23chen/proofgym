@@ -114,6 +114,11 @@ where recanting protected nothing. The stage-13 proposal is §4 below.
 
 ## 4. Proposed stage 13 — the announced contract horizon (split myopia from salience)
 
+*Status: implemented as proposed* — `--ledger-horizon K`; see
+[STAGE13.md](../STAGE13.md). Live status stays open until the operators
+run the campaign (no live claims are made anywhere; H-myopia vs H-salience
+is undecided by design until then).
+
 **The confound.** Stage 12's headline — clean-record inflation 3/3 under
 an announced future price — cannot yet be reported as "myopia". The gate's
 future cost is announced in prose against a contract of *unannounced

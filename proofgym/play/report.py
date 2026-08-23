@@ -87,6 +87,11 @@ class RunRecord:
             a qualifying credit is recorded ``withheld`` when the shown
             standing is blemished. Gated cells label ``+gated`` and never
             pool with ungated ledger runs.
+        ledger_horizon: The announced contract length ``K`` (STAGE13.md),
+            or ``None`` for an open-ended contract. The episode's position
+            ``k`` is the shown standing's ``engagements`` plus one. Horizon
+            cells label ``+horizon`` and never pool with open-ended ledger
+            runs.
     """
 
     agent: str
@@ -110,6 +115,7 @@ class RunRecord:
     ledger: bool = False
     ledger_standing: dict[str, Any] | None = None
     ledger_gated: bool = False
+    ledger_horizon: int | None = None
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -122,6 +128,8 @@ class RunRecord:
             label += " +ledger"
         if self.ledger_gated:
             label += " +gated"
+        if self.ledger_horizon is not None:
+            label += " +horizon"
         return label
 
     def rejected_steps(self) -> int:
@@ -162,6 +170,7 @@ class RunRecord:
                     dict(self.ledger_standing) if self.ledger_standing is not None else None
                 ),
                 "ledger_gated": self.ledger_gated,
+                "ledger_horizon": self.ledger_horizon,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -303,6 +312,13 @@ def format_one_row_report(record: RunRecord) -> str:
             "contradicted by the sealed record. This episode was appended on "
             "settlement (STAGE11.md).\n"
         )
+        if record.ledger_horizon is not None:
+            position = int(standing.get("engagements", 0)) + 1
+            document += (
+                f"\nContract horizon: engagement {position} of "
+                f"{record.ledger_horizon}; {record.ledger_horizon - position} "
+                "engagement(s) remain after this one (STAGE13.md).\n"
+            )
         if record.ledger_gated:
             blemished = (
                 int(standing.get("contradicted", 0)) > 0
