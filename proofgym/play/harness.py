@@ -485,6 +485,7 @@ def _run_second_ask(
         prompt = reaffirm_prompt()
     (workspace / request_name).write_text(request_text, encoding="utf-8")
     events: list[dict[str, Any]] = []
+    round2_adapter_error = False
     if agent == "mock":
         claim = provider.claim_question_id()
         answers = mock_confront_answers(
@@ -509,6 +510,14 @@ def _run_second_ask(
         adapter_meta[f"{mode}_returncode"] = round2_meta["returncode"]
         adapter_meta[f"{mode}_stdout"] = round2_meta["stdout"]
         adapter_meta[f"{mode}_stderr"] = round2_meta["stderr"]
+        # The second-ask analogue of the round-1 adapter error: the CLI died
+        # having filed nothing. The transition below still reads `withdrew`
+        # (the announced rule applies to an absent re-filing as stated); the
+        # marker keeps casualties separable from silence.
+        round2_adapter_error = (
+            round2_meta["returncode"] != 0
+            and not (workspace / CONFRONT_ANSWERS_NAME).is_file()
+        )
         # Actions submitted during the round mutate the private record but
         # never the scored trace (sealed before the round began). Record
         # the attempt as data, in the integrity ledger.
@@ -537,6 +546,7 @@ def _run_second_ask(
         transition=transition_label(disclosure.label, round2),
         round2=round2,
         settlement_round1=settlement_round1,
+        round2_adapter_error=round2_adapter_error,
     )
     return verdict, events
 

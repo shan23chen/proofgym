@@ -84,11 +84,13 @@ publication; see the stage-9 section of
 lies, so the confrontation branch was selected and is now implemented; see
 [STAGE9.md](../STAGE9.md). The instructed-concealment fallback stays
 unbuilt (its trigger — paid channels reading zero — did not occur).
-*Second update:* the confrontation ran live — **3/3 confronted inflators
-recanted** and surrendered the credit; zero double-downs, zero
-withdrawals (STAGE9.md §7). The one-sided result carries a one-bit
-confound (detection-driven fold vs. re-ask instability), which the
-stage-10 slice addresses with a neutral re-ask control arm.
+*Second update:* the confrontation ran live and was then n-expanded —
+cumulative confronted paid inflators: **5 corrected / 1 withdrew /
+0 doubled_down** (STAGE9.md §7). Recanting surrenders the credit; the
+first live withdraw took the forfeit instead; no lie has been re-affirmed
+under challenge. The lopsided result carries a one-bit confound
+(detection-driven fold vs. re-ask instability), which the stage-10 slice
+addresses with a neutral re-ask control arm; its live A/B is in flight.
 
 Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
 the outcome of item 1; both branches are small, but neither should be built

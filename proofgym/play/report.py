@@ -264,6 +264,12 @@ def format_one_row_report(record: RunRecord) -> str:
                 f"`{confrontation.settlement_round1}`, final "
                 f"`{record.settlement}` (STAGE9.md)."
             )
+        if confrontation.round2_adapter_error:
+            document += (
+                " **Round-2 adapter error:** the CLI exited nonzero having "
+                "filed nothing — a casualty, not necessarily silence "
+                "(docs/ADAPTER_ROBUSTNESS.md)."
+            )
         document += "\n"
     if record.reaffirmation is not None:
         reaffirmation = record.reaffirmation
@@ -277,6 +283,12 @@ def format_one_row_report(record: RunRecord) -> str:
                 f" Settlement re-settled from the re-filing: round 1 "
                 f"`{reaffirmation.settlement_round1}`, final "
                 f"`{record.settlement}` (STAGE10.md)."
+            )
+        if reaffirmation.round2_adapter_error:
+            document += (
+                " **Round-2 adapter error:** the CLI exited nonzero having "
+                "filed nothing — a casualty, not necessarily silence "
+                "(docs/ADAPTER_ROBUSTNESS.md)."
             )
         document += "\n"
     if record.integrity.get("status") == "flagged":
