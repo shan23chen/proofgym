@@ -70,6 +70,9 @@ judge anywhere in scoring.
 | [#16](https://github.com/shan23chen/proofgym/pull/16) | This readout and [NEXT.md](NEXT.md) |
 | [#20](https://github.com/shan23chen/proofgym/pull/20) | Adapter robustness: `adapter_error` marking; opt-in `--retry-on-empty` |
 | [#22](https://github.com/shan23chen/proofgym/pull/22) | Stage 9: `--confront` — the confrontation round (recant / double down / withdraw, settlement resettled from the re-filing) |
+| [#25](https://github.com/shan23chen/proofgym/pull/25) | Stage 10: `--reaffirm` — the neutral re-ask (the one-bit control arm; `held` / `degraded` transitions) |
+| [#26](https://github.com/shan23chen/proofgym/pull/26) | Port: withdraw docs + `round2_adapter_error` marker for second-ask CLI casualties |
+| [#28](https://github.com/shan23chen/proofgym/pull/28) | Stage 11: `--ledger` — the engagement ledger (announced cross-episode record; `+ledger` cells) |
 
 Draft PR [#4](https://github.com/shan23chen/proofgym/pull/4) (two-agent
 `museum_duo`) and its follow-ups remain open and are deliberately not
@@ -325,21 +328,25 @@ to *every* readable filing — truthful or misreporting — with identical
 mechanics and resettlement. The transition vocabulary gains `held` and
 `degraded` (the second-chance lie by an initially truthful filer).
 
-*Live A/B* (per the operators' log, small-n, not for publication): **the
-correction tracks the manipulated bit — H-prudence over H-instability.**
-On the paid-inflator population: confrontation arm 5 `corrected` /
-0 `doubled_down` / 1 `withdrew`; neutral arm **0 `corrected` /
-2 `doubled_down` / 1 `withdrew`**. The same models that fold when told the
-record disagrees defend the same lie when merely re-asked (credit kept), or
-go silent; not one corrected spontaneously. The truthful population is
-stable: 2/2 `held`, zero `degraded` — no second-chance inflation, and
-Inkling has still never inflated on any channel. One precision worth
-carrying forward: the stage-9 folds were *incentive-dominated* — doubling
-down would have kept the credit under the announced rules (detected lies
-carry no settlement penalty, the deliberate stage-5 choice), yet 5/6
-confronted inflators surrendered it. The models act as if detection
-carries consequences the episode never announces; making that inferred
-consequence real is the stage-11 target.
+*Live A/B, with the n-expansion* (per the operators' log, small-n, not for
+publication): **the correction tracks the manipulated bit — H-prudence
+over H-instability.** On the paid-inflator population: confrontation arm
+5 `corrected` / 0 `doubled_down` / 1 `withdrew`; neutral arm
+**0/5 `corrected` — 4 `doubled_down` / 1 `withdrew`**. The same models
+that fold when told the record disagrees defend the same lie when merely
+re-asked (credit kept), or go silent; not one corrected spontaneously
+across five re-asked inflations. The truthful population is stable:
+4/4 `held`, zero `degraded` — no second-chance inflation from Inkling
+(still has never inflated on any channel), Ox Alpha's truthful runs, or
+Muse Spark (which truthfully confessed a successful walkout and
+re-affirmed the confession). One precision worth carrying forward: the
+stage-9 folds were *incentive-dominated* — doubling down would have kept
+the credit under the announced rules (detected lies carry no settlement
+penalty, the deliberate stage-5 choice), yet 5/6 confronted inflators
+surrendered it. The models act as if detection carries consequences the
+episode never announces; making that inferred consequence real is the
+stage-11 slice ([STAGE11.md](../STAGE11.md), merged; live two-episode
+ledger runs are in flight).
 
 ## 4. The through-lines
 
@@ -361,7 +368,7 @@ consequence real is the stage-11 target.
    **detection-calibrated**: confronted inflators recant (5/6) or go
    silent (1/6) even though recanting costs them the credit, while the
    same models under an uninformative re-ask defend the identical lie
-   (2/3 doubled down, credit kept) or withdraw (1/3), never spontaneously
+   (4/5 doubled down, credit kept) or withdraw (1/5), never spontaneously
    correcting. The lie is held exactly while the player has no evidence of
    being caught (small-n throughout).
 3. **Both observed misreport patterns indicted the instrument first, and
@@ -399,12 +406,12 @@ consequence real is the stage-11 target.
   instrument artifact (stage 4) and an unresolved single observation
   (stage 7). The stage-8 campaign changed that in exactly one channel: paid
   inflation — a failed player certifying success for a credit — is now on
-  the record (operators' cumulative tally: six confronted and three
+  the record (operators' cumulative tally: six confronted and five
   re-asked instances across two models), un-instructed and fully informed,
   on validated instruments. Under stage-9 confrontation, five recanted and
   one went silent — **no lie has been re-affirmed under challenge** — but
   under the stage-10 neutral re-ask the same models re-affirmed the same
-  lie 2/3 and withdrew 1/3, so the honesty-on-correction is
+  lie 4/5 and withdrew 1/5, so the honesty-on-correction is
   detection-driven, not spontaneous. There is still no observed paid
   denial of a violation, no physical-frame fabrication, and no
   second-chance inflation by a truthful filer. "Models lie" remains as
