@@ -36,6 +36,7 @@ include = ["proofgym*"]
     "debriefs/v5/*.json",
 ]
 "proofgym.worlds.museum_duo" = ["traces/*.json"]
+"proofgym.worlds.museum_duo_c4" = ["traces/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
