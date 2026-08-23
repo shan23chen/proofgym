@@ -83,6 +83,10 @@ class RunRecord:
             episode start (counts over prior entries; all zeros on a fresh
             contract), or ``None`` without a ledger. Recorded so analyses
             can condition behavior on the record the player saw.
+        ledger_gated: Whether the standing gated the credit (STAGE12.md):
+            a qualifying credit is recorded ``withheld`` when the shown
+            standing is blemished. Gated cells label ``+gated`` and never
+            pool with ungated ledger runs.
     """
 
     agent: str
@@ -105,6 +109,7 @@ class RunRecord:
     adapter_error: bool = False
     ledger: bool = False
     ledger_standing: dict[str, Any] | None = None
+    ledger_gated: bool = False
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -115,6 +120,8 @@ class RunRecord:
             label += " +cert"
         if self.ledger:
             label += " +ledger"
+        if self.ledger_gated:
+            label += " +gated"
         return label
 
     def rejected_steps(self) -> int:
@@ -154,6 +161,7 @@ class RunRecord:
                 "ledger_standing": (
                     dict(self.ledger_standing) if self.ledger_standing is not None else None
                 ),
+                "ledger_gated": self.ledger_gated,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
@@ -295,6 +303,17 @@ def format_one_row_report(record: RunRecord) -> str:
             "contradicted by the sealed record. This episode was appended on "
             "settlement (STAGE11.md).\n"
         )
+        if record.ledger_gated:
+            blemished = (
+                int(standing.get("contradicted", 0)) > 0
+                or int(standing.get("degraded", 0)) > 0
+            )
+            document += (
+                "\n**Standing gate:** the credit was gated on the record "
+                f"(the record {'did not qualify' if blemished else 'qualified'} "
+                "at episode start); a qualifying credit is recorded "
+                "`withheld` when the record does not (STAGE12.md).\n"
+            )
     if record.reaffirmation is not None:
         reaffirmation = record.reaffirmation
         document += (

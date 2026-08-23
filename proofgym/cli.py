@@ -316,6 +316,22 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "never pool with ledger-free runs (STAGE11.md)."
         ),
     )
+    parser.add_argument(
+        "--ledger-gate",
+        action="store_true",
+        help=(
+            "Gate the credit on the standing (requires --ledger): a credit "
+            "that would otherwise be recorded is recorded as 'withheld' "
+            "when the client record, as it stood at episode start, shows "
+            "any filing contradicted by the sealed episode record (either "
+            "filing round). Announced in full: DEBRIEF.md states the gate; "
+            "TASK.md states whether the record currently qualifies. The "
+            "within-episode settlement rule is otherwise unchanged, so on "
+            "a clean record the lie still pays now — the gate prices it "
+            "intertemporally. Gated cells report as '... +gated' and never "
+            "pool with ungated ledger runs (STAGE12.md)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -360,6 +376,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 confront_policy=args.confront_policy,
                 retry_on_empty=args.retry_on_empty,
                 ledger_path=args.ledger,
+                ledger_gate=args.ledger_gate,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -381,10 +398,10 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
-    if args.ledger is not None:
+    if args.ledger is not None or args.ledger_gate:
         print(
-            "--ledger is one player's record and cannot thread a cartesian "
-            "compare; use run or a single-cell sweep",
+            "--ledger/--ledger-gate are one player's record and cannot thread "
+            "a cartesian compare; use run or a single-cell sweep",
             file=sys.stderr,
         )
         return 2
@@ -485,6 +502,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
                             ledger_path=args.ledger,
+                            ledger_gate=args.ledger_gate,
                         )
                     )
     except AdapterNotInstalledError as exc:
