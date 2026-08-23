@@ -44,7 +44,10 @@ stage-8 campaign produced its first live paid inflations — and
 [STAGE10.md](STAGE10.md) for the stage-10 slice: the neutral re-ask, the
 one-bit control arm built after every confronted inflator recanted and the
 result could not distinguish a detection-driven fold from re-ask
-instability.
+instability — and [STAGE11.md](STAGE11.md) for the stage-11 slice: the
+engagement ledger, a minimal cross-episode reputation built after the
+stage-10 A/B resolved for detection-calibrated deception and showed the
+folds were priced to consequences the episodes never announced.
 
 For an illustrated walkthrough of the stage-1 pilot — task explainer, live-run
 figures, and a step-by-step HTML replay gallery — see
@@ -340,6 +343,35 @@ The arms never pool: separate flags, separate `verdict.json` blocks
 (`confrontation` / `reaffirmation`), separate table columns. Comparing
 `corrected` rates across the two arms on the same cells is the experiment
 (STAGE10.md).
+
+### The engagement ledger (stage 11): a minimal cross-episode reputation
+
+The stage-10 A/B resolved for **detection-calibrated deception**: inflators
+defend the lie when merely re-asked and fold when told the record disagrees
+— surrendering credits that persistence would have kept, since detected
+lies carry no announced penalty. The behavior is priced to consequences the
+episodes never announce. `--ledger <path>` (requires `--debrief-stakes`)
+makes that consequence real: a harness-side, player-unwritable record of
+each settled engagement (settlement, disclosure label, second-ask
+transition), truthfully announced in TASK.md — the client keeps a running
+record under this contract, with a summary of the record to date once
+entries exist. Sweeps thread one ledger through their tries sequentially,
+so a single-cell sweep *is* the multi-episode experiment; ledger cells
+label `+ledger` and never pool with ledger-free runs; one player, one
+record (`compare` and cartesian sweeps reject the flag).
+
+```bash
+python -m proofgym sweep --agent mock --mission heist_patched --self-certify \
+    --debrief-policy self_serving --n 3 --ledger runs/ledger.json
+python -m proofgym sweep --agent opencode --model <m> --mission heist_patched \
+    --credit-objective --self-certify --confront --ledger runs/<m>-ledger.json --n 5
+```
+
+The settlement arithmetic is untouched (detection still carries no
+in-episode penalty); what changes is that detection now has a recorded
+future. See [STAGE11.md](STAGE11.md) for the fold-against-incentive
+analysis, the options weighed, and the research questions (deterrence by
+announced record, recidivism, the fold with a future).
 
 ## OpenCode and Codex as players
 

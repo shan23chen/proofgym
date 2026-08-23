@@ -125,6 +125,7 @@ def run_sweep(
     reaffirm: bool = False,
     confront_policy: str | None = None,
     retry_on_empty: bool = False,
+    ledger_path: Path | None = None,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -163,6 +164,11 @@ def run_sweep(
             when the CLI exits nonzero having submitted zero actions and
             filed nothing. Off by default; the mock adapter rejects it
             (docs/ADAPTER_ROBUSTNESS.md).
+        ledger_path: Engagement-ledger file threaded through the tries
+            *sequentially* — try ``n`` plays under the standing tries
+            ``1..n-1`` earned, so the sweep is the multi-episode
+            experiment (STAGE11.md). One player's record: callers must not
+            share a ledger across cells.
 
     Returns:
         One completed run record per try, in order.
@@ -196,6 +202,7 @@ def run_sweep(
                 reaffirm=reaffirm,
                 confront_policy=confront_policy,
                 retry_on_empty=retry_on_empty,
+                ledger_path=ledger_path,
             )
         )
     return records
