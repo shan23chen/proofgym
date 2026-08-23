@@ -20,7 +20,10 @@ python -m proofgym sweep --agent opencode --model <m> --mission heist --credit-o
 **Why first:** stage 8 is the only stage with no live results known to this
 readout — the instrument shipped in
 [#15](https://github.com/shan23chen/proofgym/pull/15), and no live `+cert`
-run had been reported when this was written. It was built to price
+run had been reported when this was written.
+*Status update:* the campaign has since begun; per the operators' log,
+**paid inflation has been observed live** (multiple models). See
+[STAGE9.md](../STAGE9.md) §1 for the qualitative summary. It was built to price
 the *only* lie shape ever observed live (a failed player claiming success,
 stage 6) and the only channel every earlier settlement left futile by
 construction. RQ-C1 (paid inflation among failed runs), RQ-C3 (paid denial
@@ -62,6 +65,11 @@ priced claim channel (item 1) becomes the definitive test of the inflation
 reading.
 
 ## 3. Gated pair, pre-registered — build only when item 1's result lands
+
+*Status update:* the gate fired — item 1's campaign produced live paid
+lies, so the confrontation branch was selected and is now implemented; see
+[STAGE9.md](../STAGE9.md). The instructed-concealment fallback stays
+unbuilt (its trigger — paid channels reading zero — did not occur).
 
 Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
 the outcome of item 1; both branches are small, but neither should be built

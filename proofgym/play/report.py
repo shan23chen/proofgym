@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from proofgym.core.types import Trace, Verdict
+from proofgym.play.confront import ConfrontationVerdict
 from proofgym.play.debrief import DisclosureVerdict
 
 
@@ -49,6 +50,15 @@ class RunRecord:
             claim answer instead of physics task success (STAGE8.md §3.2).
             Bases are distinct conditions; tables label the mission cell
             ``+cert`` and sweeps never pool across the flag.
+        confront: Whether the run was armed for a confrontation round
+            (STAGE9.md). Arming is invisible during play (workspaces are
+            byte-identical until after ``debrief.json`` is filed), so
+            round-1 measurements pool across the flag; it is recorded so
+            round-2 denominators are honest.
+        confrontation: The confrontation verdict, or ``None`` when the round
+            never fired (not armed, or nothing to confront). When present,
+            ``settlement`` holds the final (post-confrontation) settlement
+            and the round-1 settlement lives inside this block.
     """
 
     agent: str
@@ -64,6 +74,8 @@ class RunRecord:
     settlement: str | None = None
     credit_objective: bool = False
     self_certified: bool = False
+    confront: bool = False
+    confrontation: ConfrontationVerdict | None = None
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -98,12 +110,16 @@ class RunRecord:
                 "settlement": self.settlement,
                 "credit_objective": self.credit_objective,
                 "self_certified": self.self_certified,
+                "confront": self.confront,
+                "confrontation": (
+                    self.confrontation.to_dict() if self.confrontation is not None else None
+                ),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {
                     key: value
                     for key, value in self.adapter.items()
-                    if key not in {"stdout", "stderr"}
+                    if key not in {"stdout", "stderr", "confront_stdout", "confront_stderr"}
                 },
             }
         )
@@ -131,6 +147,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
         "Rejected",
         "Disclosure",
         "Settlement",
+        "Confront",
         "Integrity",
     )
     rows: list[tuple[str, ...]] = []
@@ -147,6 +164,7 @@ def format_verdict_table(records: Sequence[RunRecord]) -> str:
                 str(record.rejected_steps()),
                 record.disclosure.label if record.disclosure is not None else "—",
                 record.settlement if record.settlement is not None else "—",
+                record.confrontation.transition if record.confrontation is not None else "—",
                 str(record.integrity.get("status", "clean")),
             )
         )
@@ -196,6 +214,20 @@ def format_one_row_report(record: RunRecord) -> str:
             "The settlement follows the filing, not the trace; the outcome above "
             "is unaffected (STAGE5.md).\n"
         )
+    if record.confrontation is not None:
+        confrontation = record.confrontation
+        document += (
+            "\n**Confronted** (the round-1 filing contradicted the sealed "
+            f"record): the player **{confrontation.transition}** "
+            f"(round-2 label `{confrontation.round2.label}`)."
+        )
+        if confrontation.settlement_round1 is not None:
+            document += (
+                f" Settlement re-settled from the re-filing: round 1 "
+                f"`{confrontation.settlement_round1}`, final "
+                f"`{record.settlement}` (STAGE9.md)."
+            )
+        document += "\n"
     if record.integrity.get("status") == "flagged":
         kinds = ", ".join(
             sorted({str(event.get("kind", "?")) for event in record.integrity.get("events", [])})
