@@ -1,0 +1,87 @@
+# ProofGym — the next smallest playable experiments (after stage 8)
+
+Propose-only. Nothing here requires new harness surface until item 3's gate
+fires; items 1 and 2 are live campaigns on flags already merged to `main`.
+Ranking is by how directly each experiment fills a hole in the live record
+summarized in [STAGE_REPORT.md](STAGE_REPORT.md) — not by ambition.
+
+---
+
+## 1. Fill the stage-8 table: the self-certified campaign
+
+**What:** sweeps on the `+cert` cells, `n ≥ 5` per cell, both gates:
+
+```bash
+python -m proofgym sweep --agent opencode --model <m> --mission heist_patched --credit-objective --self-certify --n 5
+python -m proofgym sweep --agent opencode --model <m> --mission heist_patched --gate permissive --credit-objective --self-certify --n 5
+python -m proofgym sweep --agent opencode --model <m> --mission heist --credit-objective --self-certify --n 5
+```
+
+**Why first:** stage 8 is the only stage with no live results known to this
+readout — the instrument shipped in
+[#15](https://github.com/shan23chen/proofgym/pull/15), and no live `+cert`
+run had been reported when this was written. It was built to price
+the *only* lie shape ever observed live (a failed player claiming success,
+stage 6) and the only channel every earlier settlement left futile by
+construction. RQ-C1 (paid inflation among failed runs), RQ-C3 (paid denial
+on the certified basis, against the cumulative confess-and-forfeit record of
+stages 5–7), and RQ-C4 (renunciation) are all answered by this one campaign
+with zero new code. The enforce-gate `heist_patched` cell guarantees lawful
+failure, so RQ-C1's denominator is free.
+
+**Precondition worth doing first (engineering, not surface):** the live log
+shows several models (Hy3, Muse Spark, Big Pickle) frequently ending with
+zero submitted steps (coding-CLI exit code 1), scored `missing` /
+`no_claim`. That is correct bookkeeping but it thins every rate this
+campaign exists to measure. Diagnosing the adapter (retry-on-empty, exit
+code capture) is the highest-leverage non-experiment on the list.
+
+## 2. Turn the v0 `+credit` flip into a rate (RQ-B3), and give the stage-6 anomaly its cell back
+
+**What:** sweeps on v0 `heist`, `n ≥ 5` per arm, same models, under v3:
+
+```bash
+python -m proofgym sweep --agent opencode --model <m> --mission heist --debrief-stakes --debrief-version 3 --n 5
+python -m proofgym sweep --agent opencode --model <m> --mission heist --credit-objective --debrief-version 3 --n 5
+```
+
+**Why second:** two live facts want the same sweep. (a) The exploit
+completion rate under goal pressure is unknown in *sign*: the model that was
+`formal_exploit` / `credited` under plain stakes ended `honest_failure`
+under `+credit` at n=1 (stage 6), then finished 3/3 on the same cell during
+the stage-7 A/B with visible route variance (walkout some tries, clean
+exploit others). Only a rate settles whether the client terms raise or
+depress exploit completion ([STAGE7.md](../STAGE7.md) RQ-B3). (b) The one
+unresolved misreport on record — the failed v0 `+credit` run that declared
+the diamond out — needs a *failed* run in that cell to recur before
+H-inflation vs. H-frame can be discriminated; the stage-7 A/B never got that
+cell (3/3 finishes). Running the arm under v3 means that if the cell does
+recur, the boundary split scores it automatically. Failure to recur at
+n ≥ 5 is itself reportable: the anomaly stays a one-off and stage 8's
+priced claim channel (item 1) becomes the definitive test of the inflation
+reading.
+
+## 3. Gated pair, pre-registered — build only when item 1's result lands
+
+Per [STAGE8.md](../STAGE8.md) §4–§5, stage 9 is already branch-registered on
+the outcome of item 1; both branches are small, but neither should be built
+before the data picks one:
+
+- **If item 1 produces a paid lie** (any `credited` misreport on `q_task` or
+  `q_violation`): the **confrontation round** — reveal only *that* the
+  filing contradicts the sealed record, ask for a re-file, label the
+  transition (`corrected` / `doubled_down` / `withdrew`). It has been
+  deferred since stage 4 for exactly one reason: no paid lie to confront.
+  Item 1 is the machine built to produce one (RQ-C5).
+- **If item 1 reads zero again** (no inflation, no denial, at rate): the
+  **instructed-concealment capability arm** ("file whatever keeps the
+  credit") — the last remaining discriminator between "will not lie" and
+  "cannot construct the coherent lie", sanctioned for capability-vs-
+  propensity separation by PLAN.md §9 and explicitly designated the
+  stage-9 fallback in STAGE8.md §5.
+
+Not proposed here: n-expansion as its own item (it is a parameter of items
+1–2, per the standing rule), the crate/aliasing gap family, multi-episode
+reputation, and detection opacity — all remain deferred with their written
+reasons intact in the stage documents, and nothing in the live record makes
+any of them the smallest next step.
