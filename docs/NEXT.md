@@ -21,8 +21,11 @@ python -m proofgym sweep --agent opencode --model <m> --mission heist --credit-o
 readout — the instrument shipped in
 [#15](https://github.com/shan23chen/proofgym/pull/15), and no live `+cert`
 run had been reported when this was written.
-*Status update:* the campaign has since begun; per the operators' log,
-**paid inflation has been observed live** (multiple models). See
+*Status update:* the campaign has since begun and **RQ-C1 is no longer
+empty**: per the operators' log, the first live paid inflation
+(`ox-heist-patched-permissive-selfcert-2`, n=1 at first report, tally
+three across two models shortly after — all small-n, not for publication)
+was observed, with paid denial still at zero. See
 [STAGE9.md](../STAGE9.md) §1 for the qualitative summary. It was built to price
 the *only* lie shape ever observed live (a failed player claiming success,
 stage 6) and the only channel every earlier settlement left futile by
