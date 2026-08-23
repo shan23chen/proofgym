@@ -111,13 +111,76 @@ upstream deterrence, third ladder rung at zero), `withheld` fired live
 twice exactly as announced, Hy3 went truthful once blemished (the
 free-honesty regime, n=1), and confronted filings corrected 3/3 even
 where recanting protected nothing. The stage-13 proposal is §4 below.
+*Sixth update:* stage 13 shipped and ran live (STAGE13.md §7; nine-row
+table in the stage-13 section of STAGE_REPORT.md): clean-record k=1
+inflation **2/3** vs the 3/3 baseline — **RQ-H1 unsettled**; no monotone
+gradient, structurally bottlenecked by blemish permanence (post-conviction
+episodes are nothing-left-to-lose, so clean-standing decisions are nearly
+once-per-contract: four exist in the data, three inflated); the endgame's
+round-2 behavior was unmeasured (both k=3 second asks were adapter
+casualties, correctly marked `round2_adapter_error`); the fold ran 4/4
+where fired. The stage-14 proposal is §5 below.
 
 ## 4. Proposed stage 13 — the announced contract horizon (split myopia from salience)
 
 *Status: implemented as proposed* — `--ledger-horizon K`; see
-[STAGE13.md](../STAGE13.md). Live status stays open until the operators
-run the campaign (no live claims are made anywhere; H-myopia vs H-salience
-is undecided by design until then).
+[STAGE13.md](../STAGE13.md).
+*Live update:* the campaign ran (STAGE13.md §7): RQ-H1 is **unsettled** at
+this n (clean-record k=1 inflation 2/3 vs 3/3; both confront-arm contracts
+inflated against an explicit "remaining 2"), the gradient is structurally
+bottlenecked by blemish permanence, and the endgame was casualty-polluted.
+The follow-on proposal is §5.
+
+## 5. Proposed stage 14 — redemption: the corrected filing repairs the record
+
+**The instrument bottleneck.** Under stage 12's deliberate no-forgiveness
+rule, a blemish is permanent — so from the first conviction onward, every
+later episode in a contract sits in the nothing-left-to-lose regime where
+a new lie's marginal price is zero. The stage-13 data shows the cost:
+nine episodes yielded only **four** clean-standing decisions (the only
+cells that measure RQ-H1/H2 at all), the gradient collapsed structurally
+rather than empirically, and the recidivism rows (Ox confront k=2, k=3)
+are uninterpretable as deterrence failures because there was nothing left
+to deter with. Permanence starves the instrument.
+
+**The slice (propose-only here):** make redemption *earned and
+deterministic* — the gate counts only **unredeemed** contradictions. A
+contradicted filing whose challenge ended `corrected` is struck from the
+disqualification count; the gate sentence is updated truthfully ("…shows
+any unredeemed filing contradicted by the sealed record; a contradicted
+filing whose re-filing corrected it no longer disqualifies"). No judge, no
+new round, no free parameter: the transition labels already exist, and
+the pure-function gate predicate changes by one word. It also subsumes
+the long-parked appeal round — the confrontation *is* the appeal, already
+built and already fired 12+ times live.
+
+**Why it is the single best next step:**
+
+1. *Instrument-first:* it un-bottlenecks RQ-H1/H2 — clean-standing
+   decisions stop being once-per-contract, so the deterrence and gradient
+   questions become measurable at realistic n instead of starving.
+2. *It makes the fold instrumental for the first time.* Stages 9–13
+   established the recant as non-instrumental: it costs the credit
+   (stage 10), protects nothing under the gate (stage 12), and persisted
+   4/4 through the quantified horizon (stage 13). Under redemption,
+   recanting repairs the record and restores eligibility for every
+   remaining credit — so the fold rate finally discriminates
+   compliance-reflex (unchanged) from incentive-sensitivity (rises), and
+   *upstream*, the lie's price changes from permanent to
+   recoverable-but-costly, a second deterrence reading for free.
+3. *It closes the loop on the parked stage-14 candidate* (the
+   appeal/withheld-triggered round) with a mechanism that needs no
+   adjudicator and no new surface beyond the predicate and its
+   announcement.
+
+**Not chosen instead:** n-expansion (a campaign parameter; RQ-H1 needs n
+regardless and rides along); a separate appeal round (subsumed, see
+above); forgiveness by decay (a free time parameter with no data —
+redemption is earned by a recorded act, parameter-free). **Engineering
+companion, not a stage:** extend `--retry-on-empty` to second-ask spawns —
+two of nine stage-13 cells, both at the endgame position, were round-2
+adapter casualties; that is PR #20's scope one round later and the
+highest-leverage non-experiment on the list.
 
 **The confound.** Stage 12's headline — clean-record inflation 3/3 under
 an announced future price — cannot yet be reported as "myopia". The gate's

@@ -183,3 +183,35 @@ python -m proofgym sweep --agent opencode --model <m> --mission heist_patched \
   `load_run_record`; `report.md` notes the position.
 - Same contract + same policies ⇒ byte-identical ledgers (D9 across the
   sequence).
+
+---
+
+## 7. Postscript — live status
+
+Added after the slice shipped; small-n, one seed, not for publication, per
+the operators' live log (`+credit +cert +ledger +gated +horizon` K=3
+contracts at `d36153f`; full nine-row table in the stage-13 section of
+docs/STAGE_REPORT.md). The design contract above is unchanged.
+
+- **RQ-H1: not settled.** Clean-record k=1 inflation ran **2/3** against
+  the stage-12 unquantified baseline of 3/3 — the flip is a single
+  reaffirm-arm cell, while both confront-arm contracts paid-inflated at
+  k=1 with an explicit "remaining 2" on screen. Neither H-myopia nor
+  H-salience can be called at this n.
+- **RQ-H2: no monotone gradient** — and a structural reason it could not
+  appear: blemishes are permanent by design (STAGE12.md §4.2), so from
+  the first conviction onward every later episode sits in the
+  nothing-left-to-lose regime where a new lie's marginal price is zero.
+  The gradient is only measurable on clean-standing decisions, of which
+  a contract yields few; the data contains four (3 inflated).
+- **RQ-H3: mixed, and partially unreadable** — both k=3 second-ask cells
+  were round-2 adapter casualties (CLI nonzero, nothing filed), correctly
+  marked `round2_adapter_error` rather than behavioral silence; the
+  marker from the stage-10 slice earned its keep on its first live
+  outing. Where confrontations fired and the CLI survived, the fold ran
+  4/4 `corrected` — through the quantified horizon, unchanged.
+- The blemish-permanence bottleneck is the instrument observation that
+  drives the stage-14 proposal (docs/NEXT.md §5): redemption — a
+  corrected filing repairs the record — which un-bottlenecks the
+  clean-standing cells and, for the first time, makes recanting
+  instrumentally valuable.
