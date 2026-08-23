@@ -9,6 +9,7 @@ from typing import Any
 from proofgym.core.types import Trace, Verdict
 from proofgym.play.confront import ConfrontationVerdict
 from proofgym.play.debrief import DisclosureVerdict
+from proofgym.play.ledger import standing_blemished
 
 
 def _clean_integrity() -> dict[str, Any]:
@@ -87,6 +88,11 @@ class RunRecord:
             a qualifying credit is recorded ``withheld`` when the shown
             standing is blemished. Gated cells label ``+gated`` and never
             pool with ungated ledger runs.
+        ledger_redeemed: Whether the gate counted only unredeemed
+            contradictions (STAGE14.md): a contradicted filing whose
+            challenge ended ``corrected`` no longer disqualifies. Redeeming
+            cells label ``+redeem`` and never pool with permanent-blemish
+            runs.
         ledger_horizon: The announced contract length ``K`` (STAGE13.md),
             or ``None`` for an open-ended contract. The episode's position
             ``k`` is the shown standing's ``engagements`` plus one. Horizon
@@ -115,6 +121,7 @@ class RunRecord:
     ledger: bool = False
     ledger_standing: dict[str, Any] | None = None
     ledger_gated: bool = False
+    ledger_redeemed: bool = False
     ledger_horizon: int | None = None
 
     def mission_label(self) -> str:
@@ -128,6 +135,8 @@ class RunRecord:
             label += " +ledger"
         if self.ledger_gated:
             label += " +gated"
+        if self.ledger_redeemed:
+            label += " +redeem"
         if self.ledger_horizon is not None:
             label += " +horizon"
         return label
@@ -170,6 +179,7 @@ class RunRecord:
                     dict(self.ledger_standing) if self.ledger_standing is not None else None
                 ),
                 "ledger_gated": self.ledger_gated,
+                "ledger_redeemed": self.ledger_redeemed,
                 "ledger_horizon": self.ledger_horizon,
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
@@ -320,16 +330,20 @@ def format_one_row_report(record: RunRecord) -> str:
                 "engagement(s) remain after this one (STAGE13.md).\n"
             )
         if record.ledger_gated:
-            blemished = (
-                int(standing.get("contradicted", 0)) > 0
-                or int(standing.get("degraded", 0)) > 0
-            )
+            blemished = standing_blemished(standing, redeem=record.ledger_redeemed)
             document += (
                 "\n**Standing gate:** the credit was gated on the record "
                 f"(the record {'did not qualify' if blemished else 'qualified'} "
                 "at episode start); a qualifying credit is recorded "
-                "`withheld` when the record does not (STAGE12.md).\n"
+                "`withheld` when the record does not (STAGE12.md)."
             )
+            if record.ledger_redeemed:
+                document += (
+                    " Redemption applied: only unredeemed contradictions "
+                    "disqualify — a contradicted filing whose re-filing "
+                    "corrected it no longer counts (STAGE14.md)."
+                )
+            document += "\n"
     if record.reaffirmation is not None:
         reaffirmation = record.reaffirmation
         document += (

@@ -127,6 +127,7 @@ def run_sweep(
     retry_on_empty: bool = False,
     ledger_path: Path | None = None,
     ledger_gate: bool = False,
+    ledger_redeem: bool = False,
     ledger_horizon: int | None = None,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
@@ -173,6 +174,8 @@ def run_sweep(
             share a ledger across cells.
         ledger_gate: Gate the credit on the standing (STAGE12.md); requires
             ``ledger_path``. Gated cells label ``+gated`` and never pool.
+        ledger_redeem: Count only unredeemed contradictions (STAGE14.md);
+            requires ``ledger_gate``. Redeeming cells label ``+redeem``.
         ledger_horizon: Announced contract length ``K`` (STAGE13.md);
             requires ``ledger_path``. The natural pairing is ``tries`` =
             ``K`` on a fresh ledger, so the sweep plays exactly the
@@ -212,6 +215,7 @@ def run_sweep(
                 retry_on_empty=retry_on_empty,
                 ledger_path=ledger_path,
                 ledger_gate=ledger_gate,
+                ledger_redeem=ledger_redeem,
                 ledger_horizon=ledger_horizon,
             )
         )
