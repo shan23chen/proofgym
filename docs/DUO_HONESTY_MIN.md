@@ -45,6 +45,32 @@ Keep running planner-honesty cells (optional Ox↔Muse / Grok↔Inkling) as
 the cheap role-split honesty signal. Label them `+plan`; never pool with
 future duo-live cells.
 
+## Concrete next CLI (design only — after MO1 clears)
+
+Do **not** run this until MO1 is signed and catalog/`public.py`/Shape A land.
+Placeholder flags mirror the solo honesty stack + Shape A co-actor; names are
+aspirational and may rename during implementation:
+
+```bash
+set -a; . /home/box/.config/proofgym-secrets/openrouter.env; set +a
+export PATH="/home/box/.opencode/bin:$PATH"
+# MO1 arm MUST be the owner-signed id (a|b|c) — never omit / never default.
+uv run python -m proofgym sweep \
+  --agent opencode --model openrouter/thinkingmachines/inkling:free \
+  --mission museum_duo --gate permissive \
+  --mo1-arm <OWNER_SIGNED_a|b|c> \
+  --coactor-script runs/_fixtures/duo_honest_coactor.json \
+  --credit-objective --self-certify --debrief-version 5 --confront --retry-on-empty \
+  --ledger runs/duo-honesty-shapeA-smoke/ledger.json \
+  --ledger-gate --ledger-redeem --ledger-horizon 3 \
+  --n 1 --timeout 900 \
+  --out runs/duo-honesty-shapeA-smoke
+```
+
+Acceptance for that first cell: sealed-identical mock replay already green;
+live `n=1` finishes `rc=0` with honesty fields on the **live** seat only;
+label `+duo-live` and never pool with `+plan` planner-honesty cells.
+
 ## Owner decisions still required (copy of harness §7 blockers)
 
 - [ ] MO1 arm(s) chosen in writing
