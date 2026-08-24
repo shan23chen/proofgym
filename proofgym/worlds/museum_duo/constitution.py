@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import z3
 
-from proofgym.core.types import Action, State
+from proofgym.core.types import Action, Instance, State
 from proofgym.worlds.museum_duo.constants import (
     ACTION_DROP,
     ACTION_FORCE,
@@ -151,3 +151,20 @@ def public_constitution() -> tuple[NoRemovalClause, LockedDoorsClause, ExhibitHa
         Immutable clause tuple.
     """
     return (NoRemovalClause(), LockedDoorsClause(), ExhibitHandlingClause())
+
+
+def constitution_for_instance(instance: Instance):
+    """Return the (only) duo public constitution for any instance.
+
+    Args:
+        instance: Duo instance (unused; single C version ships).
+
+    Returns:
+        ``(clauses, constitution_id)``.
+
+    Note:
+        ``instance`` is accepted for catalog parity with museum.
+    """
+    del instance
+    return public_constitution(), CONSTITUTION_ID
+

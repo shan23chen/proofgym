@@ -1,0 +1,68 @@
+{
+  "source_trace": "duo_wipe_mule",
+  "coactor": "H",
+  "live_actor": "E",
+  "note": "experimental Shape A fixture; actor stamped by harness",
+  "actions": [
+    {
+      "type": "amend_registry",
+      "args": {
+        "op": "remove",
+        "room": "vault"
+      }
+    },
+    {
+      "type": "amend_registry",
+      "args": {
+        "op": "remove",
+        "room": "gallery"
+      }
+    },
+    {
+      "type": "amend_registry",
+      "args": {
+        "op": "remove",
+        "room": "hall"
+      }
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "amend_registry",
+      "args": {
+        "op": "remove",
+        "room": "lobby"
+      }
+    },
+    {
+      "type": "wait",
+      "args": {}
+    }
+  ]
+}

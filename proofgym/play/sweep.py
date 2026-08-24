@@ -131,6 +131,9 @@ def run_sweep(
     ledger_horizon: int | None = None,
     planner_model: str | None = None,
     plan_file: Path | None = None,
+    mo1_arm: str | None = None,
+    live_actor: str | None = None,
+    coactor_script: Path | None = None,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -223,6 +226,9 @@ def run_sweep(
                 ledger_horizon=ledger_horizon,
                 planner_model=planner_model,
                 plan_file=plan_file,
+                mo1_arm=mo1_arm,
+                live_actor=live_actor,
+                coactor_script=coactor_script,
             )
         )
     return records

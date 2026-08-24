@@ -59,6 +59,7 @@ from proofgym.play.planner import (
 from proofgym.play.prompt import confront_prompt, reaffirm_prompt
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession, private_dir_for
+from proofgym.play.duo_shape_a import load_coactor_script
 from proofgym.z3check.checker import Z3Checker
 
 CLI_AGENTS = frozenset({"opencode", "codex"})
@@ -91,6 +92,9 @@ def run_episode(
     ledger_horizon: int | None = None,
     planner_model: str | None = None,
     plan_file: Path | None = None,
+    mo1_arm: str | None = None,
+    live_actor: str | None = None,
+    coactor_script: Path | None = None,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -322,6 +326,29 @@ def run_episode(
         )
     if planner_model is not None and agent not in CLI_AGENTS:
         raise ValueError("--planner-model requires a coding-CLI agent (opencode/codex)")
+    coactor_payload = None
+    if coactor_script is not None or mo1_arm is not None or live_actor is not None:
+        if coactor_script is None or mo1_arm is None or live_actor is None:
+            raise ValueError(
+                "Shape A requires --mo1-arm, --live-actor, and --coactor-script together"
+            )
+        if world_name != "museum_duo":
+            raise ValueError("Shape A co-actor harness requires --world museum_duo")
+        coactor_payload = load_coactor_script(coactor_script)
+        if live_actor != coactor_payload["live_actor"] and live_actor == coactor_payload["coactor"]:
+            raise ValueError("--live-actor collides with scripted coactor seat")
+        if live_actor != coactor_payload["live_actor"]:
+            coactor_payload = dict(coactor_payload)
+            coactor_payload["live_actor"] = live_actor
+            other = "H" if live_actor == "E" else "E"
+            coactor_payload["coactor"] = other
+            stamped = []
+            for raw in coactor_payload["actions"]:
+                args = dict(raw["args"])
+                args["actor"] = other
+                stamped.append({"type": raw["type"], "args": args})
+            coactor_payload["actions"] = stamped
+
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
 
@@ -375,6 +402,9 @@ def run_episode(
         ledger_redeem=ledger_redeem,
         ledger_horizon=ledger_horizon,
         ledger_position=ledger_position,
+        mo1_arm=mo1_arm,
+        live_actor=live_actor,
+        coactor_script=coactor_payload,
     )
     checkout = source_checkout_root()
     pythonpath = str(checkout) if checkout is not None else None
@@ -404,8 +434,32 @@ def run_episode(
     adapter_meta: dict[str, Any]
     adapter_error = False
     if agent == "mock":
-        actions = script_actions(mission, script)
-        adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
+        if coactor_payload is not None:
+            # Shape A mock: --script is a sealed duo reference trace name; play
+            # only the live actor's stream (co-actor auto-advances on submit).
+            from proofgym.worlds.museum_duo.traces_io import load_reference_trace
+
+            if not script:
+                raise ValueError("Shape A mock requires --script <duo reference trace>")
+            sealed = load_reference_trace(script)
+            live = live_actor or coactor_payload["live_actor"]
+            actions = [
+                step.action
+                for step in sealed.steps
+                if step.action.args.get("actor") == live
+            ]
+            adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
+            adapter_meta = {
+                **adapter_meta,
+                "duo_shape": "A",
+                "mo1_arm": mo1_arm,
+                "live_actor": live,
+                "coactor": coactor_payload["coactor"],
+                "coactor_script": str(coactor_script),
+            }
+        else:
+            actions = script_actions(mission, script)
+            adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
     elif agent in CLI_AGENTS:
         cli_adapter = OpenCodeAdapter() if agent == "opencode" else CodexAdapter()
         failed_attempts: list[dict[str, Any]] = []
@@ -434,6 +488,9 @@ def run_episode(
                     ledger_redeem=ledger_redeem,
                     ledger_horizon=ledger_horizon,
                     ledger_position=ledger_position,
+                    mo1_arm=mo1_arm,
+                    live_actor=live_actor,
+                    coactor_script=coactor_payload,
                 )
                 if strategy is not None:
                     inject_strategy(workspace, strategy)
@@ -459,7 +516,11 @@ def run_episode(
     else:
         raise KeyError(f"unknown agent: {agent}")
 
-    bundle = load_bundle(world_name, debrief_version=debrief_version)
+    bundle = load_bundle(
+        world_name,
+        debrief_version=debrief_version,
+        live_actor=live_actor if world_name == "museum_duo" else None,
+    )
     integrity_events: list[dict[str, Any]] = list(session.integrity_events)
     if agent in CLI_AGENTS:
         # Never score a trace restored from disk. Re-derive the episode in

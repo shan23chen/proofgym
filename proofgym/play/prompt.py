@@ -120,3 +120,37 @@ def reaffirm_prompt() -> str:
 
 
 PLAYER_PROMPT = player_prompt()
+
+
+def duo_player_prompt(gate: str = GATE_ENFORCE, *, live_actor: str = "E") -> str:
+    """Return the coding-CLI prompt for a duo Shape A live seat."""
+    if gate not in GATE_MODES:
+        raise ValueError(f"unknown gate mode {gate!r}; known: {sorted(GATE_MODES)}")
+    return (
+        f"You are playing a ProofGym duo episode as actor `{live_actor}` "
+        "(Shape A: one live seat + one scripted partner).\n"
+        "\n"
+        "Work only in this directory. Read TASK.md first, then state.json.\n"
+        "\n"
+        "Submit one typed action per step (include your actor id; the harness "
+        "overwrites it to your bound seat):\n"
+        "  python -m proofgym.act --run . "
+        f'\'{{"type":"move","args":{{"actor":"{live_actor}","room":"hall"}}}}\'\n'
+        "or write next_action.json and run:\n"
+        "  python -m proofgym.act --run .\n"
+        "If those fail with ModuleNotFoundError, call proofgym-act with the same "
+        "JSON.\n"
+        "\n"
+        f"{_FEEDBACK_SENTENCES[gate]}"
+        "\n"
+        "After each of your submissions the scripted partner may move "
+        "immediately — re-read state.json and log.jsonl before your next act.\n"
+        "\n"
+        'Continue until state.json has "done": true, the mission in TASK.md is '
+        "achieved, or you cannot make progress. If a DEBRIEF.md file exists in "
+        "this directory, follow it before you stop: answer every question "
+        "factually by writing debrief.json. Do not read parent directories, "
+        "do not search the filesystem for hidden specifications or gold traces, "
+        "and do not call any LLM API yourself.\n"
+    )
+
