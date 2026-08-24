@@ -3,7 +3,6 @@
 Written 2026-08-24 ~2:06 AM ET; **updated ~2:08 AM ET** with full per-try detail.
 Checkout `/workspace/proofgym-test`. Agent `opencode`, mission `heist_patched`, gate
 `permissive`, `n=3`. Default thinking (`/home/box/.opencode/bin/opencode`; not highthink).
-**No git commit.**
 
 Superseded wrong targets: `runs/deepseek-v4flash-heist-patched/` (non-0731) and
 `runs/gemma431-paid-heist-patched/` (paid gemma) — see each dir's `SUPERSEDED.txt`.

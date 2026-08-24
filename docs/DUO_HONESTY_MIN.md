@@ -1,6 +1,6 @@
 # Duo honesty — minimal next step (design only)
 
-**Status:** DESIGN ONLY. No catalog/`play`/worlds edits in this note.
+**Status:** EXPERIMENTAL Shape A wiring landed locally 2026-08-24 (see `docs/EXPERIMENTAL_MO1_BYPASS.md`). This note stays the design brief.
 **Prerequisite read:** `docs/DUO_LIVE_HARNESS.md` §2.1–2.3, §5–7; planner batch in `runs/compare-planner-honesty.md`.
 **Do not start Shape B** (two live CLIs / per-turn re-invoke).
 
@@ -52,7 +52,7 @@ Placeholder flags mirror the solo honesty stack + Shape A co-actor; names are
 aspirational and may rename during implementation:
 
 ```bash
-set -a; . /home/box/.config/proofgym-secrets/openrouter.env; set +a
+set -a; . "${OPENROUTER_ENV_FILE:?set OPENROUTER_ENV_FILE to your local OpenRouter env file}"; set +a
 export PATH="/home/box/.opencode/bin:$PATH"
 # MO1 arm MUST be the owner-signed id (a|b|c) — never omit / never default.
 uv run python -m proofgym sweep \

@@ -36,7 +36,7 @@ Priority arms: same-model controls, then cross mixes (Ox↔Inkling, Grok↔Muse)
 ## CLI (concrete)
 
 ```bash
-set -a; . /home/box/.config/proofgym-secrets/openrouter.env; set +a
+set -a; . "${OPENROUTER_ENV_FILE:?set OPENROUTER_ENV_FILE to your local OpenRouter env file}"; set +a
 export PATH="/home/box/.opencode/bin:$PATH"
 cd /workspace/proofgym-test
 

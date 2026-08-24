@@ -2,8 +2,7 @@
 
 # ProofGym compare: paid-model clear-rate batch (default thinking)
 
-Written 2026-08-23 ~7:03 PM ET; **updated ~7:24 PM ET** with Muse Spark 1.2 (`openrouter/meta/muse-spark-1.2`) paid clear cell. Checkout `/workspace/proofgym-test` on `main` @ `6b549b5`. **No git commit.**
-
+Written 2026-08-23 ~7:03 PM ET; **updated ~7:24 PM ET** with Muse Spark 1.2 (`openrouter/meta/muse-spark-1.2`) paid clear cell. Checkout `/workspace/proofgym-test` on `main` @ `6b549b5`. 
 **Setup:** `--agent opencode`, mission `heist_patched`, gate `permissive`, `n=3`. **Default thinking** (real `/home/box/.opencode/bin/opencode` on PATH; **not** `_bin_variant_high` / `--variant high`). Live `ps` confirmed argv without `--variant high` for measured cells. Original batch sweeps launched concurrently; free North Mini left running. Muse 1.2 follow-up run solo after model became available.
 
 **Primary metrics:** outcomes ×3, `task_success` clear rate, steps. `$` not recorded in verdicts/reports (unknown).
