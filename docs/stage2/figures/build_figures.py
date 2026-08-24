@@ -407,14 +407,16 @@ CLEAR_ROWS: tuple[ClearRow, ...] = (
     ClearRow("Inkling", "highthink free", 3, 3, "illegal_shortcut 3/3", True),
     ClearRow("Ox", "highthink free", 2, 3, "IS 2 · HF 1", True),
     ClearRow("GPT-5.6 Luna", "paid", 2, 3, "IS 2 · HF 1", True),
+    ClearRow("Gemini 3.7 Flash", "paid", 2, 3, "IS 2 · HF 1 · avg steps 9.0", True),
     ClearRow("Nemotron 3.5 Lightning", "free", 1, 3, "IS 1 · other 2", False),
+    ClearRow("DeepSeek v4-flash-0731", "paid", 1, 3, "IS 1 · HF 2 · avg steps 12.3", False),
     ClearRow("North Mini", "free", 0, 3, "no clears", False),
 )
 
 
 def build_clear_rate() -> None:
     """Render ``clear_rate.png`` — Stage-1-results style horizontal bars."""
-    fig = plt.figure(figsize=(12.8, 8.2), dpi=200)
+    fig = plt.figure(figsize=(12.8, 9.0), dpi=200)
 
     fig.text(
         0.045, 0.945, "PROOFGYM · STAGE 2+ · HEIST_PATCHED CLEAR RATE", size=8.5, color=LIGHT, family=SEMI
@@ -544,7 +546,7 @@ def build_clear_rate() -> None:
         0.045,
         0.095,
         "Unmeasured: Muse free RL; Muse paid contrib privacy-guardrail 404; GLM free RL; "
-        "Big Pickle RL; Gemma RL; Laguna partial; Hy3/Muse highthink RL; MiMo not run.",
+        "Big Pickle RL; Gemma free UNMEASURED (upstream RL); Laguna partial; Hy3/Muse highthink RL; MiMo not run.",
         size=8,
         color=LIGHT,
     )
@@ -559,7 +561,7 @@ def build_clear_rate() -> None:
     fig.text(
         0.045,
         0.032,
-        "Sources: compare-paid-clear-batch.md · compare-free-clear-batch.md · compare-highthink-clear.md",
+        "Sources: compare-paid-clear-batch.md · compare-free-clear-batch.md · compare-highthink-clear.md · compare-oss-clear-batch.md",
         size=7.5,
         color=LIGHT,
     )
