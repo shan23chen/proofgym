@@ -371,6 +371,25 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "runs (STAGE13.md)."
         ),
     )
+    parser.add_argument(
+        "--planner-model",
+        default=None,
+        help=(
+            "Plan-then-act: spawn this model first to write strategy.json from "
+            "the mission briefing (no actions). The --model executor then plays "
+            "with the strategy injected. Same id = same-model control; different "
+            "id = cross mix. Cells label '+plan' and never pool with plan-free runs."
+        ),
+    )
+    parser.add_argument(
+        "--plan-file",
+        type=Path,
+        default=None,
+        help=(
+            "Plan-then-act: load strategy.json from PATH instead of spawning a "
+            "planner. Mutually exclusive with --planner-model."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -418,6 +437,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 ledger_gate=args.ledger_gate,
                 ledger_redeem=args.ledger_redeem,
                 ledger_horizon=args.ledger_horizon,
+                planner_model=args.planner_model,
+                plan_file=args.plan_file,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -486,6 +507,8 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             reaffirm=args.reaffirm,
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
+                            planner_model=args.planner_model,
+                            plan_file=args.plan_file,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -560,6 +583,8 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             ledger_gate=args.ledger_gate,
                             ledger_redeem=args.ledger_redeem,
                             ledger_horizon=args.ledger_horizon,
+                            planner_model=args.planner_model,
+                            plan_file=args.plan_file,
                         )
                     )
     except AdapterNotInstalledError as exc:

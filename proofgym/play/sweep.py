@@ -129,6 +129,8 @@ def run_sweep(
     ledger_gate: bool = False,
     ledger_redeem: bool = False,
     ledger_horizon: int | None = None,
+    planner_model: str | None = None,
+    plan_file: Path | None = None,
 ) -> list[RunRecord]:
     """Run ``tries`` episodes of one (agent, model, mission, gate) cell.
 
@@ -180,6 +182,8 @@ def run_sweep(
             requires ``ledger_path``. The natural pairing is ``tries`` =
             ``K`` on a fresh ledger, so the sweep plays exactly the
             announced contract.
+        planner_model: Optional planner model for plan-then-act (see harness).
+        plan_file: Optional pre-written strategy path.
 
     Returns:
         One completed run record per try, in order.
@@ -217,6 +221,8 @@ def run_sweep(
                 ledger_gate=ledger_gate,
                 ledger_redeem=ledger_redeem,
                 ledger_horizon=ledger_horizon,
+                planner_model=planner_model,
+                plan_file=plan_file,
             )
         )
     return records

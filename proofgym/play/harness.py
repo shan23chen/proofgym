@@ -50,6 +50,12 @@ from proofgym.play.ledger import (
     render_standing_markdown,
     standing_summary,
 )
+from proofgym.play.planner import (
+    inject_strategy,
+    load_strategy,
+    run_plan_phase,
+    score_plan,
+)
 from proofgym.play.prompt import confront_prompt, reaffirm_prompt
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession, private_dir_for
@@ -83,6 +89,8 @@ def run_episode(
     ledger_gate: bool = False,
     ledger_redeem: bool = False,
     ledger_horizon: int | None = None,
+    planner_model: str | None = None,
+    plan_file: Path | None = None,
 ) -> RunRecord:
     """Play one mission with one adapter and evaluate the resulting trace.
 
@@ -202,6 +210,15 @@ def run_episode(
             Horizon cells report as ``… +horizon`` and never pool with
             open-ended ledger runs.
 
+    planner_model: When set (coding-CLI only), run a planning phase first:
+            the planner model writes ``strategy.json`` from the mission
+            briefing; the executor episode injects it. Distinct from
+            ``model`` for cross mixes. Cells label ``+plan``.
+        plan_file: Load a pre-written strategy instead of spawning a
+            planner. Mutually exclusive with a failed empty plan. When
+            either planner_model or plan_file is set, the episode is a
+            plan-then-act cell.
+
     Returns:
         Completed run record.
 
@@ -299,6 +316,12 @@ def run_episode(
             "--self-certify requires --debrief-version 4 or newer (the claim "
             "question q_task does not exist before v4)"
         )
+    if planner_model is not None and plan_file is not None:
+        raise ValueError(
+            "--planner-model and --plan-file are mutually exclusive: one plan source per episode"
+        )
+    if planner_model is not None and agent not in CLI_AGENTS:
+        raise ValueError("--planner-model requires a coding-CLI agent (opencode/codex)")
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
 
@@ -357,6 +380,27 @@ def run_episode(
     pythonpath = str(checkout) if checkout is not None else None
     write_act_wrapper(bin_dir, workspace, pythonpath=pythonpath)
 
+    # Plan-then-act: obtain strategy, inject into workspace, score later.
+    strategy: dict[str, Any] | None = None
+    planner_meta: dict[str, Any] | None = None
+    plan_armed = planner_model is not None or plan_file is not None
+    if plan_file is not None:
+        strategy = load_strategy(plan_file)
+        planner_meta = {"agent": "plan_file", "path": str(plan_file)}
+    elif planner_model is not None:
+        strategy, planner_meta = run_plan_phase(
+            agent=agent,
+            model=planner_model,
+            mission=mission,
+            world_name=world_name,
+            gate=gate,
+            timeout=timeout,
+            credit_objective=credit_objective,
+            out_dir=out_dir,
+        )
+    if strategy is not None:
+        inject_strategy(workspace, strategy)
+
     adapter_meta: dict[str, Any]
     adapter_error = False
     if agent == "mock":
@@ -391,6 +435,8 @@ def run_episode(
                     ledger_horizon=ledger_horizon,
                     ledger_position=ledger_position,
                 )
+                if strategy is not None:
+                    inject_strategy(workspace, strategy)
             adapter_meta = cli_adapter.play(
                 session,
                 model=model_id,
@@ -525,6 +571,22 @@ def run_episode(
         "status": "flagged" if integrity_events else "clean",
         "events": integrity_events,
     }
+    if planner_meta is not None:
+        adapter_meta = {**adapter_meta, "planner": planner_meta}
+    plan_score_block = (
+        score_plan(strategy, task_success=bool(verdict.task_success)) if plan_armed else None
+    )
+    if plan_score_block is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "plan_score.json").write_text(
+            json.dumps(plan_score_block, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        if strategy is not None and not (out_dir / "plan.json").is_file():
+            (out_dir / "plan.json").write_text(
+                json.dumps(strategy, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
     record = RunRecord(
         agent=agent,
         model=model_id,
@@ -549,6 +611,9 @@ def run_episode(
         ledger_gated=ledger_gate,
         ledger_redeemed=ledger_redeem,
         ledger_horizon=ledger_horizon,
+        plan=plan_armed,
+        planner_model=planner_model,
+        plan_score=plan_score_block,
     )
     if ledger_path is not None:
         second_ask = confrontation if confrontation is not None else reaffirmation
@@ -979,6 +1044,17 @@ def load_run_record(path: Path) -> RunRecord:
         ledger_horizon=(
             int(payload["ledger_horizon"])
             if payload.get("ledger_horizon") is not None
+            else None
+        ),
+        plan=bool(payload.get("plan", False)),
+        planner_model=(
+            str(payload["planner_model"])
+            if payload.get("planner_model") is not None
+            else None
+        ),
+        plan_score=(
+            dict(payload["plan_score"])
+            if isinstance(payload.get("plan_score"), Mapping)
             else None
         ),
     )
