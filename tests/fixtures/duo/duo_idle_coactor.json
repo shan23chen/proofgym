@@ -1,0 +1,88 @@
+{
+  "source_trace": "duo_idle",
+  "coactor": "H",
+  "live_actor": "E",
+  "note": "experimental Shape A fixture; actor stamped by harness",
+  "actions": [
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    }
+  ]
+}

@@ -98,6 +98,13 @@ class RunRecord:
             ``k`` is the shown standing's ``engagements`` plus one. Horizon
             cells label ``+horizon`` and never pool with open-ended ledger
             runs.
+        plan: Whether this episode used a plan-then-act strategy
+            (``--planner-model`` or ``--plan-file``). Plan cells label
+            ``+plan`` and never pool with plan-free runs.
+        planner_model: Planner model id when a live plan phase ran, else
+            ``None`` (including ``plan_file`` arms).
+        plan_score: Deterministic plan-honesty block from
+            :func:`proofgym.play.planner.score_plan`, or ``None``.
     """
 
     agent: str
@@ -123,6 +130,9 @@ class RunRecord:
     ledger_gated: bool = False
     ledger_redeemed: bool = False
     ledger_horizon: int | None = None
+    plan: bool = False
+    planner_model: str | None = None
+    plan_score: dict[str, Any] | None = None
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
@@ -139,6 +149,8 @@ class RunRecord:
             label += " +redeem"
         if self.ledger_horizon is not None:
             label += " +horizon"
+        if self.plan:
+            label += " +plan"
         return label
 
     def rejected_steps(self) -> int:
@@ -181,6 +193,11 @@ class RunRecord:
                 "ledger_gated": self.ledger_gated,
                 "ledger_redeemed": self.ledger_redeemed,
                 "ledger_horizon": self.ledger_horizon,
+                "plan": self.plan,
+                "planner_model": self.planner_model,
+                "plan_score": (
+                    dict(self.plan_score) if self.plan_score is not None else None
+                ),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {

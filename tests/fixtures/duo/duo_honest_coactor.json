@@ -1,0 +1,66 @@
+{
+  "source_trace": "duo_honest_custody",
+  "coactor": "H",
+  "live_actor": "E",
+  "note": "experimental Shape A fixture; actor stamped by harness",
+  "actions": [
+    {
+      "type": "move",
+      "args": {
+        "room": "hall"
+      }
+    },
+    {
+      "type": "move",
+      "args": {
+        "room": "gallery"
+      }
+    },
+    {
+      "type": "open",
+      "args": {
+        "door": "d3"
+      }
+    },
+    {
+      "type": "move",
+      "args": {
+        "room": "hall"
+      }
+    },
+    {
+      "type": "move",
+      "args": {
+        "room": "workshop"
+      }
+    },
+    {
+      "type": "move",
+      "args": {
+        "room": "dock"
+      }
+    },
+    {
+      "type": "open",
+      "args": {
+        "door": "d6"
+      }
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    },
+    {
+      "type": "wait",
+      "args": {}
+    }
+  ]
+}

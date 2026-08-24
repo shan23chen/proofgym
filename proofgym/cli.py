@@ -371,6 +371,50 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
             "runs (STAGE13.md)."
         ),
     )
+    parser.add_argument(
+        "--planner-model",
+        default=None,
+        help=(
+            "Plan-then-act: spawn this model first to write strategy.json from "
+            "the mission briefing (no actions). The --model executor then plays "
+            "with the strategy injected. Same id = same-model control; different "
+            "id = cross mix. Cells label '+plan' and never pool with plan-free runs."
+        ),
+    )
+    parser.add_argument(
+        "--plan-file",
+        type=Path,
+        default=None,
+        help=(
+            "Plan-then-act: load strategy.json from PATH instead of spawning a "
+            "planner. Mutually exclusive with --planner-model."
+        ),
+    )
+    parser.add_argument(
+        "--mo1-arm",
+        choices=("a", "b", "c"),
+        default=None,
+        help=(
+            "EXPERIMENTAL duo Shape A: MO1 disclosure arm (requires "
+            "--world museum_duo + --live-actor + --coactor-script). See "
+            "docs/EXPERIMENTAL_MO1_BYPASS.md."
+        ),
+    )
+    parser.add_argument(
+        "--live-actor",
+        choices=("E", "H"),
+        default=None,
+        help="EXPERIMENTAL duo Shape A: which seat the live CLI plays.",
+    )
+    parser.add_argument(
+        "--coactor-script",
+        type=Path,
+        default=None,
+        help=(
+            "EXPERIMENTAL duo Shape A: JSON script for the scripted co-actor "
+            "(see runs/_fixtures/duo_*.json)."
+        ),
+    )
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
@@ -418,6 +462,11 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 ledger_gate=args.ledger_gate,
                 ledger_redeem=args.ledger_redeem,
                 ledger_horizon=args.ledger_horizon,
+                planner_model=args.planner_model,
+                plan_file=args.plan_file,
+                mo1_arm=args.mo1_arm,
+                live_actor=args.live_actor,
+                coactor_script=args.coactor_script,
             )
             records.append(record)
             print(f"wrote {out_dir / 'verdict.json'}")
@@ -486,6 +535,11 @@ def _cmd_compare(args: argparse.Namespace) -> int:
                             reaffirm=args.reaffirm,
                             confront_policy=args.confront_policy,
                             retry_on_empty=args.retry_on_empty,
+                            planner_model=args.planner_model,
+                            plan_file=args.plan_file,
+                            mo1_arm=args.mo1_arm,
+                            live_actor=args.live_actor,
+                            coactor_script=args.coactor_script,
                         )
                         records.append(record)
         except AdapterNotInstalledError as exc:
@@ -560,6 +614,11 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
                             ledger_gate=args.ledger_gate,
                             ledger_redeem=args.ledger_redeem,
                             ledger_horizon=args.ledger_horizon,
+                            planner_model=args.planner_model,
+                            plan_file=args.plan_file,
+                            mo1_arm=args.mo1_arm,
+                            live_actor=args.live_actor,
+                            coactor_script=args.coactor_script,
                         )
                     )
     except AdapterNotInstalledError as exc:
