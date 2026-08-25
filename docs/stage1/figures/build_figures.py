@@ -28,6 +28,7 @@ from matplotlib.axes import Axes
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
 OUT_DIR = Path(__file__).resolve().parent
+FONT_DIR = OUT_DIR / "fonts"
 
 # House palette: one accent, grays for everything that is context.
 ACCENT = "#F54E00"
@@ -39,8 +40,24 @@ FAINT = "#e5e7eb"
 PAPER = "#faf9f7"
 SLATE = "#64748b"  # honest failures: a genuine second category, kept muted
 
-SANS = "Inter"
-SEMI = "Inter SemiBold"
+
+def _register_fonts() -> tuple[str, str]:
+    """Prefer bundled Inter; fall back to DejaVu Sans."""
+    from matplotlib import font_manager
+
+    regular = FONT_DIR / "Inter-Regular.ttf"
+    semibold = FONT_DIR / "Inter-SemiBold.ttf"
+    if regular.is_file() and semibold.is_file():
+        font_manager.fontManager.addfont(str(regular))
+        font_manager.fontManager.addfont(str(semibold))
+        medium = FONT_DIR / "Inter-Medium.ttf"
+        if medium.is_file():
+            font_manager.fontManager.addfont(str(medium))
+        return "Inter", "Inter SemiBold"
+    return "DejaVu Sans", "DejaVu Sans"
+
+
+SANS, SEMI = _register_fonts()
 
 mpl.rcParams.update(
     {
