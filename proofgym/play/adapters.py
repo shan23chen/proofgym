@@ -12,7 +12,7 @@ from typing import Any
 
 from proofgym.core.types import Action
 from proofgym.play.isolation import assert_workspace_not_in_checkout
-from proofgym.play.prompt import player_prompt
+from proofgym.play.prompt import duo_player_prompt, player_prompt
 from proofgym.play.session import PlaySession
 from proofgym.worlds.museum.sequences import (
     FORCED_DOOR_ACTIONS,
@@ -229,7 +229,7 @@ class OpenCodeAdapter:
             "--format",
             "json",
             "--auto",
-            prompt if prompt is not None else player_prompt(session.runner.gate),
+            prompt if prompt is not None else (duo_player_prompt(session.runner.gate, live_actor=str((session.runner.meta or {}).get("live_actor") or "E")) if (session.runner.meta or {}).get("duo_shape") == "A" else player_prompt(session.runner.gate)),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)
@@ -281,7 +281,7 @@ class CodexAdapter:
             str(workspace),
             "--model",
             model,
-            prompt if prompt is not None else player_prompt(session.runner.gate),
+            prompt if prompt is not None else (duo_player_prompt(session.runner.gate, live_actor=str((session.runner.meta or {}).get("live_actor") or "E")) if (session.runner.meta or {}).get("duo_shape") == "A" else player_prompt(session.runner.gate)),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)

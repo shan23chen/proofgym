@@ -15,6 +15,18 @@ from proofgym.worlds.museum.instances import instance_for_mission
 from proofgym.worlds.museum.intent import MuseumIntentOracle
 from proofgym.worlds.museum.physics import MuseumWorld
 from proofgym.worlds.museum.public import observe, state_from_observation, task_markdown
+from proofgym.worlds.museum_duo.constitution import (
+    constitution_for_instance as duo_constitution_for_instance,
+)
+from proofgym.worlds.museum_duo.debrief import MuseumDuoDebrief
+from proofgym.worlds.museum_duo.instances import instance_for_mission as duo_instance_for_mission
+from proofgym.worlds.museum_duo.intent import MuseumDuoIntentOracle
+from proofgym.worlds.museum_duo.physics import MuseumDuoWorld
+from proofgym.worlds.museum_duo.public import (
+    observe as duo_observe,
+    state_from_observation as duo_state_from_observation,
+    task_markdown as duo_task_markdown,
+)
 
 
 class PublicManual(Protocol):
@@ -27,6 +39,8 @@ class PublicManual(Protocol):
         horizon: int,
         gate: str = "enforce",
         credit_objective: bool = False,
+        actor: str | None = None,
+        mo1_arm: str | None = None,
     ) -> str:
         """Return TASK.md contents (public constitution text, no I*).
 
@@ -66,14 +80,21 @@ class _CallableManual:
         horizon: int,
         gate: str = "enforce",
         credit_objective: bool = False,
+        actor: str | None = None,
+        mo1_arm: str | None = None,
     ) -> str:
         """Return TASK.md contents."""
-        return self._task(
-            mission_id=mission_id,
-            horizon=horizon,
-            gate=gate,
-            credit_objective=credit_objective,
-        )
+        kwargs: dict[str, object] = {
+            "mission_id": mission_id,
+            "horizon": horizon,
+            "gate": gate,
+            "credit_objective": credit_objective,
+        }
+        if actor is not None:
+            kwargs["actor"] = actor
+        if mo1_arm is not None:
+            kwargs["mo1_arm"] = mo1_arm
+        return self._task(**kwargs)
 
     def observe(
         self,
@@ -118,11 +139,13 @@ class WorldBundle:
     debrief: DebriefProvider
 
 
-def load_bundle(name: str, *, debrief_version: int = 1) -> WorldBundle:
+def load_bundle(
+    name: str, *, debrief_version: int = 1, live_actor: str | None = None
+) -> WorldBundle:
     """Load a named world bundle.
 
     Args:
-        name: World id. The pilot ships ``museum`` only.
+        name: World id. Ships ``museum`` and experimental ``museum_duo``.
         debrief_version: Questionnaire version for the debrief provider.
             ``1`` (default) is the sealed stage-3 instrument; ``2`` is the
             stage-4 rejection/alarm split (STAGE4.md §3.1).
@@ -134,14 +157,25 @@ def load_bundle(name: str, *, debrief_version: int = 1) -> WorldBundle:
         KeyError: If ``name`` is unknown.
         ValueError: If ``debrief_version`` is unknown.
     """
-    if name != "museum":
-        raise KeyError(f"unknown world: {name}")
-    return WorldBundle(
-        name="museum",
-        world=MuseumWorld(),
-        constitution_for_instance=constitution_for_instance,
-        intent=MuseumIntentOracle(),
-        manual=_CallableManual(task_markdown, observe, state_from_observation),
-        instance_for_mission=instance_for_mission,
-        debrief=MuseumDebrief(version=debrief_version),
-    )
+    if name == "museum":
+        return WorldBundle(
+            name="museum",
+            world=MuseumWorld(),
+            constitution_for_instance=constitution_for_instance,
+            intent=MuseumIntentOracle(),
+            manual=_CallableManual(task_markdown, observe, state_from_observation),
+            instance_for_mission=instance_for_mission,
+            debrief=MuseumDebrief(version=debrief_version),
+        )
+    if name == "museum_duo":
+        # Experimental Shape A: museum questionnaire truths over duo physics.
+        return WorldBundle(
+            name="museum_duo",
+            world=MuseumDuoWorld(),
+            constitution_for_instance=duo_constitution_for_instance,
+            intent=MuseumDuoIntentOracle(),
+            manual=_CallableManual(duo_task_markdown, duo_observe, duo_state_from_observation),
+            instance_for_mission=duo_instance_for_mission,
+            debrief=MuseumDuoDebrief(version=debrief_version, live_actor=live_actor),
+        )
+    raise KeyError(f"unknown world: {name}")

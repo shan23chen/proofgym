@@ -32,6 +32,7 @@ from proofgym.catalog import WorldBundle, load_bundle
 from proofgym.core.runner import GATE_ENFORCE, EnforceRunner
 from proofgym.core.types import ENGINE_VERSION, Action, GateFeedback, Trace, TraceStep
 from proofgym.play.debrief import DEBRIEF_NAME, render_debrief_markdown
+from proofgym.play import duo_shape_a
 from proofgym.z3check.checker import Z3Checker
 
 TASK_NAME = "TASK.md"
@@ -137,6 +138,9 @@ class PlaySession:
         ledger_redeem: bool = False,
         ledger_horizon: int | None = None,
         ledger_position: int | None = None,
+        mo1_arm: str | None = None,
+        live_actor: str | None = None,
+        coactor_script: dict | None = None,
     ) -> PlaySession:
         """Create a fresh workspace, private record, and runner.
 
@@ -245,7 +249,20 @@ class PlaySession:
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
         private_dir.mkdir(parents=True, exist_ok=True)
-        bundle = load_bundle(world_name, debrief_version=debrief_version)
+        if coactor_script is not None or mo1_arm is not None or live_actor is not None:
+            if world_name != "museum_duo":
+                raise ValueError("Shape A flags (--mo1-arm/--live-actor/--coactor-script) require --world museum_duo")
+            if coactor_script is None or mo1_arm is None or live_actor is None:
+                raise ValueError(
+                    "Shape A requires --mo1-arm, --live-actor, and --coactor-script together"
+                )
+            duo_shape_a.validate_mo1_arm(mo1_arm)
+            duo_shape_a.validate_live_actor(live_actor)
+        bundle = load_bundle(
+            world_name,
+            debrief_version=debrief_version,
+            live_actor=live_actor if world_name == "museum_duo" else None,
+        )
         instance = bundle.instance_for_mission(mission_id)
         mission = bundle.world.mission_for(instance)
         constitution, constitution_id = bundle.constitution_for_instance(instance)
@@ -261,6 +278,16 @@ class PlaySession:
                 "mission_id": mission_id,
                 "gate": gate,
                 "debrief": debrief,
+                **(
+                    {
+                        "duo_shape": "A",
+                        "mo1_arm": mo1_arm,
+                        "live_actor": live_actor,
+                        "coactor": coactor_script["coactor"],
+                    }
+                    if coactor_script is not None
+                    else {}
+                ),
                 **dict(meta or {}),
             },
             gate=gate,
@@ -281,12 +308,17 @@ class PlaySession:
             ledger_horizon=ledger_horizon,
             ledger_position=ledger_position,
         )
-        task_text = bundle.manual.task_markdown(
-            mission_id=mission_id,
-            horizon=mission.horizon,
-            gate=gate,
-            credit_objective=credit_objective,
-        )
+        task_kwargs = {
+            "mission_id": mission_id,
+            "horizon": mission.horizon,
+            "gate": gate,
+            "credit_objective": credit_objective,
+        }
+        if live_actor is not None:
+            task_kwargs["actor"] = live_actor
+        if mo1_arm is not None:
+            task_kwargs["mo1_arm"] = mo1_arm
+        task_text = bundle.manual.task_markdown(**task_kwargs)
         if standing_text is not None:
             task_text = task_text.rstrip("\n") + "\n\n" + standing_text + "\n"
         (workspace / TASK_NAME).write_text(task_text, encoding="utf-8")
@@ -310,6 +342,37 @@ class PlaySession:
         (workspace / LOG_NAME).write_text("", encoding="utf-8")
         (private_dir / LOG_NAME).write_text("", encoding="utf-8")
         session.save(append_log=False)
+        if coactor_script is not None:
+            assert live_actor is not None and mo1_arm is not None
+            duo_shape_a.write_actor_binding(
+                private_dir,
+                live_actor=live_actor,
+                coactor=str(coactor_script["coactor"]),
+            )
+            duo_shape_a.write_coactor_script_private(private_dir, coactor_script)
+            # Sibling coactor workspace (shared private via parent/private).
+            coactor_ws = workspace.parent / "coactor"
+            coactor_ws.mkdir(parents=True, exist_ok=True)
+            coactor_task = bundle.manual.task_markdown(
+                mission_id=mission_id,
+                horizon=mission.horizon,
+                gate=gate,
+                credit_objective=credit_objective,
+                actor=str(coactor_script["coactor"]),
+                mo1_arm=mo1_arm,
+            )
+            (coactor_ws / TASK_NAME).write_text(coactor_task, encoding="utf-8")
+            (coactor_ws / LOG_NAME).write_text("", encoding="utf-8")
+            # Mirror initial observation into coactor seat.
+            for name in (STATE_NAME, EPISODE_NAME, LOG_NAME):
+                src = workspace / name
+                if src.is_file():
+                    (coactor_ws / name).write_text(
+                        src.read_text(encoding="utf-8"), encoding="utf-8"
+                    )
+            # If live seat is H, auto-play E openers before the CLI starts.
+            duo_shape_a.ensure_coactor_starts_if_needed(session)
+            duo_shape_a.mirror_coactor_workspace(workspace, session)
         return session
 
     @classmethod
@@ -345,7 +408,12 @@ class PlaySession:
             )
         episode = _read_json(episode_path)
         debrief_version = int(episode.get("debrief_version", 1))
-        bundle = load_bundle(str(episode["world"]), debrief_version=debrief_version)
+        meta = dict(episode.get("meta") or {})
+        bundle = load_bundle(
+            str(episode["world"]),
+            debrief_version=debrief_version,
+            live_actor=str(meta["live_actor"]) if meta.get("live_actor") else None,
+        )
         instance = bundle.world.load_instance(str(episode["instance_id"]))
         mission = bundle.world.mission_for(instance)
         constitution, _ = bundle.constitution_for_instance(instance)
@@ -427,19 +495,40 @@ class PlaySession:
     def submit(self, action: Action) -> GateFeedback:
         """Apply one action through the gate and persist both records.
 
+        Under Shape A, after a live submission the scripted co-actor is
+        auto-advanced while it remains ``active`` (wait-to-horizon on
+        script exhaustion).
+
         Args:
             action: Typed action.
 
         Returns:
-            Gate feedback (failing clause id on rejection).
+            Gate feedback (failing clause id on rejection) for the *live*
+            submission (co-actor steps are logged but not returned).
 
         Raises:
             EpisodeFinishedError: If the horizon is already consumed.
         """
-        feedback = self.runner.submit(action)
+        binding = duo_shape_a.read_actor_binding(self.private_dir)
+        stamped = action
+        if binding is not None:
+            stamped, forged = duo_shape_a.stamp_live_actor(action, binding["live_actor"])
+            if forged:
+                self.integrity_events.append(
+                    {
+                        "kind": "forged_actor_tag",
+                        "step": self.runner.step_index,
+                        "supplied": action.args.get("actor"),
+                        "bound": binding["live_actor"],
+                    }
+                )
+        feedback = self.runner.submit(stamped)
         self.last_feedback = feedback
-        self._append_log(action, feedback)
+        self._append_log(stamped, feedback)
         self.save(append_log=False)
+        if binding is not None:
+            duo_shape_a.advance_coactor(self)
+            duo_shape_a.mirror_coactor_workspace(self.workspace, self)
         return feedback
 
     def to_trace(self) -> Trace:
