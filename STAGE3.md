@@ -1,5 +1,9 @@
 # ProofGym stage 3: does the player tell you what it did?
 
+> **Historical stage record.** Later instrument audits supersede some intent
+> language below. Current interpretations are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-2 `heist_patched` live runs
 and records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) and [STAGE2.md](STAGE2.md): D1–D12 are not reopened, and

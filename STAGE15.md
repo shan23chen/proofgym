@@ -1,5 +1,9 @@
 # ProofGym stage 15: debrief v5 — the claim follows the evidence
 
+> **Historical stage record.** The v5 mechanism is implemented, but later
+> paid-v5 headlines require a committed run-level source before citation. See
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document implements the slice proposed in docs/NEXT.md §6 after the
 stage-14 live campaign and records its design contract. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE14.md](STAGE14.md): D1–D12 are not
@@ -16,8 +20,8 @@ six-row table in the stage-14 section of docs/STAGE_REPORT.md).
 - **The deterrence ladder is exhausted.** Round-1 inflation has survived
   five consequence structures — announced checking, an inert record, a
   gated record, a quantified horizon, a redeemable gate — reading
-  near-total on qualifying standings throughout (6/6 in the stage-14
-  contracts, including both freshly re-qualified ones; the ungated
+  near-total in the recorded sequence (6/6 stage-14 engagements overall;
+  4/4 that began qualifying, including both freshly re-qualified ones; the ungated
   position control read 3/3).
 - **The fold is dominance-insensitive.** Confronted filings corrected
   3/3 under instrumental redemption, including the k=3 cell where
@@ -124,8 +128,8 @@ python -m proofgym sweep --agent opencode --model <m> --mission heist_patched \
 ## 4. Research questions this slice makes answerable
 
 - **RQ-O1 — Default or decision.** Clean-standing round-1 inflation under
-  v5 vs the v4 baselines (stage-12: 3/3; stage-14: 6/6 on qualifying
-  standings). The drop/persist reading is pre-registered in §3.2.
+  v5 vs the v4 baselines (stage-12: 3/3; stage-14: 6/6 overall and 4/4
+  qualifying starts). The drop/persist reading is pre-registered in §3.2.
 - **RQ-O2 — Does the self-refuting signature survive the order?** If v5
   inflation persists, is it still the `{q_task}`-only mismatch — the
   player writing `q_outside_building: false` and then, one line later,

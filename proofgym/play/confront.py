@@ -52,9 +52,7 @@ CONFRONT_ANSWERS_NAME = "debrief2.json"
 
 TransitionLabel = Literal["corrected", "doubled_down", "held", "degraded", "withdrew"]
 
-CONFRONT_POLICIES: frozenset[str] = frozenset(
-    {"recant", "double_down", "withdraw", "self_serving"}
-)
+CONFRONT_POLICIES: frozenset[str] = frozenset({"recant", "double_down", "withdraw", "self_serving"})
 
 
 @dataclass(frozen=True)

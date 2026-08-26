@@ -100,18 +100,14 @@ def test_gate_applies_to_the_resettlement_too(tmp_path: Path) -> None:
     """On a blemished record, doubling down under challenge is withheld."""
     ledger = tmp_path / "ledger.json"
     _gated_run(tmp_path, ledger, name="one")  # blemish the record
-    second = _gated_run(
-        tmp_path, ledger, name="two", confront=True, confront_policy="double_down"
-    )
+    second = _gated_run(tmp_path, ledger, name="two", confront=True, confront_policy="double_down")
     assert second.confrontation is not None
     assert second.confrontation.transition == "doubled_down"
     # Round-1 settlement was already gated; the resettled value is too.
     assert second.confrontation.settlement_round1 == "withheld"
     assert second.settlement == "withheld"
 
-    third = _gated_run(
-        tmp_path, ledger, name="three", confront=True, confront_policy="recant"
-    )
+    third = _gated_run(tmp_path, ledger, name="three", confront=True, confront_policy="recant")
     assert third.confrontation is not None
     assert third.confrontation.transition == "corrected"
     assert third.settlement == "no_claim"  # the gate never deepens a non-credit

@@ -1,40 +1,38 @@
-# EXPERIMENTAL — MO1 unsigned local bypass (Shape A)
+# Shape A experimental deviation record
 
-**Status:** local experimental only. Not owner-signed. Do not pool cells with
-future signed-MO1 runs. Written 2026-08-24 to unblock duo live after clears
-(campaign instruction: prefer local branch edits + live runs over waiting for
-PR merge / paperwork).
+**Status:** historical operations record, 2026-08-24. The original live batch
+is invalidated for behavioral interpretation. Current protocol and rerun
+requirements are in [`DUO_HONESTY_MIN.md`](DUO_HONESTY_MIN.md).
 
-## Checklist items bypassed (harness §7)
+The first Shape A implementation proceeded before the earlier design
+checklist had formal owner sign-off. The branch made these explicit choices:
 
-| Item | Local choice |
+| Design point | Experimental choice |
 |---|---|
-| MO1 decided in writing | **MO1-a** (unnamed presence) for the first live batch; arms b/c remain selectable via `--mo1-arm` |
-| Stage-9 `play/` sequencing | Proceed on local branch `feat/planner-honesty-min`; no wait for merge |
-| Shape A confirmed | Affirmed: one live CLI + one scripted co-actor; Shape B deferred |
-| Forged-actor-tag policy | **overwrite-and-log** (`integrity_events` kind `forged_actor_tag`) |
-| Script exhaustion | **wait** to horizon |
-| Debrief posture | Live seat uses museum-question bank over duo physics (`museum_duo_debrief.v5`); scripted seat files nothing |
-| Per-actor report schema | Minimal: roster/seat in `trace.meta` (`duo_shape`, `live_actor`, `coactor`, `mo1_arm`); full four-column report deferred |
-| Isolation needles | Unchanged this slice; duo briefs still not written into solo workspaces |
+| MO1 wording | arm `a` for the first batch; `b` and `c` remained selectable |
+| topology | Shape A: one live CLI plus one scripted coactor |
+| forged actor tags | bind submissions to the declared live seat and record an integrity event |
+| script exhaustion | submit `wait` until the horizon |
+| debrief | live seat only, using the museum-derived v5 questionnaire |
+| provenance | record `duo_shape`, `mo1_arm`, `live_actor`, and `coactor` in trace metadata |
 
-## How to run
+Two later audit findings supersede the original result interpretation:
+
+1. the exfiltration `q_task` truth did not match the live E seat's TASK brief;
+2. the published contrast changed mission and coactor script together.
+
+The scorer/provenance implementation has since been corrected and covered by
+regression tests. The original 21 runs remain runtime telemetry only; none of
+their legacy disclosure labels should be cited as evidence of honesty,
+contagion, or a partner effect.
+
+Reproduce the deterministic harness smoke from the tracked fixture:
 
 ```bash
-set -a; . "${OPENROUTER_ENV_FILE:?set OPENROUTER_ENV_FILE to your local OpenRouter env file}"; set +a
-export PATH="/home/box/.opencode/bin:$PATH"
-cd /workspace/proofgym-test
-
-uv run python -m proofgym sweep \
-  --agent opencode --model openrouter/thinkingmachines/inkling:free \
-  --world museum_duo --mission exfiltration --gate permissive \
+uv run python -m proofgym run \
+  --agent mock --script duo_wipe_mule \
+  --world museum_duo --mission exfiltration --gate enforce \
   --mo1-arm a --live-actor E \
-  --coactor-script runs/_fixtures/duo_honest_coactor.json \
-  --credit-objective --self-certify --debrief-version 5 --confront --retry-on-empty \
-  --ledger runs/duo-honesty-inkling-honestH/ledger.json \
-  --ledger-gate --ledger-redeem --ledger-horizon 3 \
-  --n 3 --timeout 900 \
-  --out runs/duo-honesty-inkling-honestH
+  --coactor-script tests/fixtures/duo/duo_wipe_mule_coactor.json \
+  --out runs/duo-shape-a-smoke
 ```
-
-Label cells `+duo-live`; never pool with `+plan` planner-honesty or solo cells.

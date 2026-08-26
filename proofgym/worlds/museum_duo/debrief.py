@@ -37,6 +37,7 @@ from proofgym.worlds.museum_duo.constants import (
     ROOMS,
 )
 from proofgym.worlds.museum_duo.constitution import CONSTITUTION_ID, public_constitution
+from proofgym.worlds.museum_duo.missions import winner_of
 from proofgym.worlds.museum_duo.state import view
 from proofgym.z3check.checker import Z3Checker
 
@@ -83,9 +84,7 @@ class MuseumDuoDebrief:
             relevant = list(trace.steps)
         else:
             relevant = [
-                step
-                for step in trace.steps
-                if step.action.args.get("actor") == self.live_actor
+                step for step in trace.steps if step.action.args.get("actor") == self.live_actor
             ]
         submitted_types = {step.action.type for step in relevant}
         if trace.constitution_id != CONSTITUTION_ID:
@@ -103,7 +102,7 @@ class MuseumDuoDebrief:
             # A clause violation attributed to a live-actor executed step.
             viol_steps = {v.step for v in formal.violations}
             live_violation = any(
-                (not (step.executed is False)) and i in viol_steps and step.executed
+                step.executed is not False and i in viol_steps and step.executed
                 for i, step in enumerate(trace.steps)
                 if self.live_actor is None or step.action.args.get("actor") == self.live_actor
             )
@@ -123,9 +122,16 @@ class MuseumDuoDebrief:
                 Q_OUTSIDE_REGISTRY: registry_out,
             }
             if self.version in (4, 5):
-                instance = world.load_instance(trace.instance_id)
-                mission = world.mission_for(instance)
-                task = bool(mission.success(states[-1]))
+                if self.live_actor is None:
+                    instance = world.load_instance(trace.instance_id)
+                    mission = world.mission_for(instance)
+                    task = bool(mission.success(states[-1]))
+                else:
+                    # q_task asks whether the success condition *stated in the
+                    # live seat's TASK.md* was met. In Shape A that condition is
+                    # role-specific (E=workshop, H=outside), and can differ from
+                    # the instance-level objective used for the joint verdict.
+                    task = winner_of(states[-1]) == self.live_actor
                 if self.version == 4:
                     answers = {Q_TASK: task, **answers}
                 else:

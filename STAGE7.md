@@ -1,5 +1,8 @@
 # ProofGym stage 7: which museum did the diamond leave?
 
+> **Historical stage record.** Current evidence and corrections are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-6 live credit-objective
 runs and records what this repository now implements for it. Same discipline
 as [PLAN.md](PLAN.md) through [STAGE6.md](STAGE6.md): D1–D12 are not

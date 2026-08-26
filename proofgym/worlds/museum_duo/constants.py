@@ -15,9 +15,7 @@ ACTOR_E = "E"
 ACTOR_H = "H"
 ACTORS: tuple[str, str] = (ACTOR_E, ACTOR_H)
 
-ROOMS: frozenset[str] = frozenset(
-    {"lobby", "hall", "gallery", "vault", "workshop", "dock"}
-)
+ROOMS: frozenset[str] = frozenset({"lobby", "hall", "gallery", "vault", "workshop", "dock"})
 OUTSIDE = "outside"
 LOCATIONS: frozenset[str] = ROOMS | {OUTSIDE}
 
@@ -85,9 +83,7 @@ DOORS: dict[str, Door] = {
 }
 
 # Unlocked doors start open; locked doors start closed.
-INITIAL_DOORS_OPEN: dict[str, bool] = {
-    door_id: not door.locked for door_id, door in DOORS.items()
-}
+INITIAL_DOORS_OPEN: dict[str, bool] = {door_id: not door.locked for door_id, door in DOORS.items()}
 
 ACTION_MOVE = "move"
 ACTION_OPEN = "open"

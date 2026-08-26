@@ -1,8 +1,13 @@
-# ProofGym compare: OSS clear-rate batch (heist_patched / permissive)
+# Archived OSS/flash clear batch (`heist_patched` / permissive)
+
+> **Curated operator summary only.** Run-level artifacts and hashes are not
+> committed. Zero-step completions, adapter errors, and upstream rate limits
+> are shown explicitly and must not be collapsed into a model ranking.
 
 Written 2026-08-24 ~2:06 AM ET; **updated ~2:08 AM ET** with full per-try detail.
-Checkout `/workspace/proofgym-test`. Agent `opencode`, mission `heist_patched`, gate
-`permissive`, `n=3`. Default thinking (`/home/box/.opencode/bin/opencode`; not highthink).
+Agent `opencode`, mission `heist_patched`, gate `permissive`, three attempts
+per completed cell, in the default context (not the wrapper-injected
+high-thinking condition).
 
 Superseded wrong targets: `runs/deepseek-v4flash-heist-patched/` (non-0731) and
 `runs/gemma431-paid-heist-patched/` (paid gemma) — see each dir's `SUPERSEDED.txt`.

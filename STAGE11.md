@@ -1,5 +1,9 @@
 # ProofGym stage 11: the engagement ledger — make the imagined consequence real
 
+> **Historical stage record.** Ledger rows are sequential positions in a
+> changing contract, not independent replicates. See
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the completed stage-10 live A/B and
 records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE10.md](STAGE10.md): D1–D12 are not

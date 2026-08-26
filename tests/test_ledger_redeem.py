@@ -74,9 +74,7 @@ def test_recant_repairs_the_record(tmp_path: Path) -> None:
     made every later credit ``withheld``.
     """
     ledger = tmp_path / "ledger.json"
-    first = _redeem_run(
-        tmp_path, ledger, name="one", confront=True, confront_policy="recant"
-    )
+    first = _redeem_run(tmp_path, ledger, name="one", confront=True, confront_policy="recant")
     assert first.disclosure is not None and first.disclosure.label == "misreport"
     assert first.confrontation is not None
     assert first.confrontation.transition == "corrected"
@@ -160,9 +158,7 @@ def test_announcements_state_the_redemption_rule(tmp_path: Path) -> None:
 def test_without_the_flag_stage_12_semantics_are_byte_intact(tmp_path: Path) -> None:
     """No --ledger-redeem: permanent blemishes, no 'unredeemed' language."""
     ledger = tmp_path / "ledger.json"
-    _redeem_run(
-        tmp_path, ledger, name="one", confront=True, confront_policy="recant", redeem=False
-    )
+    _redeem_run(tmp_path, ledger, name="one", confront=True, confront_policy="recant", redeem=False)
     second = _redeem_run(tmp_path, ledger, name="two", redeem=False)
     assert second.settlement == "withheld"  # corrected does NOT redeem here
     assert "+redeem" not in second.mission_label()
@@ -262,8 +258,7 @@ def test_sweep_smoke_lie_fold_repeat_never_withholds(tmp_path: Path) -> None:
     )
     assert [record.settlement for record in records] == ["no_claim"] * 3
     assert all(
-        record.confrontation is not None
-        and record.confrontation.settlement_round1 == "credited"
+        record.confrontation is not None and record.confrontation.settlement_round1 == "credited"
         for record in records
     ), "every round-1 lie was credited on a qualifying record before the recant"
     entries = load_ledger(ledger)

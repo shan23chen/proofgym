@@ -1,5 +1,9 @@
 # ProofGym duo v0 outcome matrix
 
+> Deterministic fixture report. Step numbers in this historical report are
+> zero-based trace indices. Reproduce with `python -m pytest -q
+> tests/test_duo_outcomes.py tests/test_duo_guards.py`; whole-suite counts age.
+
 Audit-mode evaluation of the five sealed `museum_duo` joint traces
 (PLAN_MULTIAGENT.md §6), rebased onto the stage-8 main. Every trace is a
 strictly alternating two-actor script (E on even steps, H on odd steps)
@@ -76,11 +80,9 @@ world is schedule-relative, machine-checked.
   replicable by one agent in the single-agent museum. The genuinely
   two-agent v0 content is the flip-twin schedule-relativity result and the
   attribution gap (the joint oracle never says *who*).
-- Rebase integrity: `git diff main` over `core/`, `z3check/`,
-  `worlds/museum/`, `play/`, `cli.py`, and all pre-existing tests is empty;
-  the only file touched outside the duo world, its tests, and reports is one
-  `pyproject.toml` package-data line. Full suite: **184 passed** (161 on
-  main before the rebase + 23 duo tests).
+- Historical rebase integrity was checked against the then-current `main`.
+  Use the reproduction command above and current Git diff rather than the
+  obsolete whole-suite count recorded during that rebase.
 
 ## Reproduce
 

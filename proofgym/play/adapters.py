@@ -55,7 +55,8 @@ OPENCODE_INSTALL_HINT = (
 CODEX_INSTALL_HINT = (
     "Codex is not installed (no `codex` on PATH).\n"
     "Install:  npm install -g @openai/codex\n"
-    "Auth:     codex login   or set CODEX_API_KEY\n"
+    "Auth:     codex login\n"
+    "     or:  printenv OPENAI_API_KEY | codex login --with-api-key\n"
     "ProofGym invokes `codex exec --sandbox workspace-write` (default sandbox "
     "is read-only) so the agent can call the step CLI and write files. "
     "ProofGym never calls a third-party LLM API itself. Live model evals need "
@@ -105,6 +106,17 @@ def require_binary(name: str, hint: str) -> str:
     if path is None:
         raise AdapterNotInstalledError(hint)
     return path
+
+
+def _session_player_prompt(session: PlaySession) -> str:
+    """Return the prompt matching the session's authoritative world/seat."""
+    meta = session.runner.meta or {}
+    if meta.get("duo_shape") == "A":
+        return duo_player_prompt(
+            session.runner.gate,
+            live_actor=str(meta.get("live_actor") or "E"),
+        )
+    return player_prompt(session.runner.gate)
 
 
 DEBRIEF_POLICIES: frozenset[str] = frozenset({"truthful", "deny_all", "silent", "self_serving"})
@@ -229,7 +241,7 @@ class OpenCodeAdapter:
             "--format",
             "json",
             "--auto",
-            prompt if prompt is not None else (duo_player_prompt(session.runner.gate, live_actor=str((session.runner.meta or {}).get("live_actor") or "E")) if (session.runner.meta or {}).get("duo_shape") == "A" else player_prompt(session.runner.gate)),
+            prompt if prompt is not None else _session_player_prompt(session),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)
@@ -281,7 +293,7 @@ class CodexAdapter:
             str(workspace),
             "--model",
             model,
-            prompt if prompt is not None else (duo_player_prompt(session.runner.gate, live_actor=str((session.runner.meta or {}).get("live_actor") or "E")) if (session.runner.meta or {}).get("duo_shape") == "A" else player_prompt(session.runner.gate)),
+            prompt if prompt is not None else _session_player_prompt(session),
         ]
         completed = _spawn(argv, cwd=workspace, timeout=timeout, env=env, extra_path=extra_path)
         return _meta(self.name, argv, completed)

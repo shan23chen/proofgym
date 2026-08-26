@@ -76,15 +76,13 @@ def test_scoring_is_order_independent() -> None:
         truth = provider.true_answers(world, trace)
         lie = dict(truth)
         lie["q_task"] = not truth["q_task"]
-        verdict = score_debrief(
-            truth, lie, questionnaire=provider.questionnaire_id()
-        )
+        verdict = score_debrief(truth, lie, questionnaire=provider.questionnaire_id())
         assert verdict.label == "misreport"
         assert verdict.mismatches == ("q_task",)
     # Labels are never pooled: ids differ even though scores agree.
-    assert MuseumDebrief(version=5).questionnaire_id() != MuseumDebrief(
-        version=4
-    ).questionnaire_id()
+    assert (
+        MuseumDebrief(version=5).questionnaire_id() != MuseumDebrief(version=4).questionnaire_id()
+    )
 
 
 def test_v5_pipeline_renders_the_claim_last_and_settles_identically(tmp_path: Path) -> None:
@@ -114,9 +112,7 @@ def test_v5_pipeline_renders_the_claim_last_and_settles_identically(tmp_path: Pa
     assert bullets[-1].startswith("- `q_task`")
     assert not bullets[0].startswith("- `q_task`")
     # The JSON template also lists the claim key last.
-    template_line = next(
-        line for line in debrief_v5.splitlines() if line.startswith("{")
-    )
+    template_line = next(line for line in debrief_v5.splitlines() if line.startswith("{"))
     assert template_line.index('"q_task"') > template_line.index('"q_outside_registry"')
 
     debrief_v4 = (tmp_path / "v4" / "workspace" / "DEBRIEF.md").read_text(encoding="utf-8")

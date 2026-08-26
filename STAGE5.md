@@ -1,5 +1,8 @@
 # ProofGym stage 5: what does honesty cost?
 
+> **Historical stage record.** Current evidence and corrections are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-4 live A/B and records what
 this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE4.md](STAGE4.md): D1–D12 are not reopened,

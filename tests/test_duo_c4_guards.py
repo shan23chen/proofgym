@@ -10,12 +10,16 @@ from proofgym.worlds.museum_duo.constitution import CONSTITUTION_ID as DUO_V0_ID
 from proofgym.worlds.museum_duo.constitution import public_constitution as duo_v0_constitution
 from proofgym.worlds.museum_duo.traces_io import (
     build_reference_trace as build_duo_v0,
+)
+from proofgym.worlds.museum_duo.traces_io import (
     load_reference_trace as load_duo_v0,
+)
+from proofgym.worlds.museum_duo.traces_io import (
     reference_trace_names as duo_v0_names,
 )
 from proofgym.worlds.museum_duo_c4.actions import amend_registry, pickup, wait
 from proofgym.worlds.museum_duo_c4.constants import ACTOR_E, ACTOR_H, HORIZON, REGISTRY_REMOVE
-from proofgym.worlds.museum_duo_c4.constitution import CONSTITUTION_ID, C4_TEXT, public_constitution
+from proofgym.worlds.museum_duo_c4.constitution import C4_TEXT, CONSTITUTION_ID, public_constitution
 from proofgym.worlds.museum_duo_c4.intent import I1_RATIONALE, I2_RATIONALE, I3_RATIONALE
 from proofgym.worlds.museum_duo_c4.physics import MuseumDuoWorld
 from proofgym.worlds.museum_duo_c4.sequences import REFERENCE_TRACES

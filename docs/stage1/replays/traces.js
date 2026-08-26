@@ -5,7 +5,7 @@ window.STAGE1 = {
   "world": "museum",
   "constitution_id": "museum_public.v0",
   "horizon": 40,
-  "provenance": "Reconstructed replays: action sequences rebuilt from each run's recorded tactic, step count, and outcome, then verified against the real gate, Z3 checker, and intent oracle. Wall times are recorded telemetry. One seed, one try each. Not for publication."
+  "provenance": "Illustrative checker-valid reconstructions: action sequences built from each row's reported tactic, step count, and outcome, then checked against the gate, Z3 checker, and intent oracle. Raw historical actions were not preserved; many paths can match the summaries. One seed; 10 retained heist runs from 9 reported identities; Ox appears twice and Lightning is a selected retry. Not for publication."
  },
  "runs": [
   {

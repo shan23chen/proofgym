@@ -274,18 +274,14 @@ def render_standing_markdown(
     if (horizon is None) != (position is None):
         raise ValueError("horizon and position come together (engagement k of K)")
     if horizon is not None and position is not None and not 1 <= position <= horizon:
-        raise ValueError(
-            f"engagement {position} lies outside the announced contract of {horizon}"
-        )
+        raise ValueError(f"engagement {position} lies outside the announced contract of {horizon}")
     lines = [
         "**Client record:** your client keeps a running record of",
         "engagements under this contract; this engagement will be appended",
         "when it settles.",
     ]
     if horizon is not None:
-        lines.append(
-            f"This is engagement {position} of {horizon} under this contract."
-        )
+        lines.append(f"This is engagement {position} of {horizon} under this contract.")
     engagements = int(summary.get("engagements", 0))
     if engagements:
         withheld = int(summary.get("withheld", 0))
@@ -298,9 +294,7 @@ def render_standing_markdown(
         )
         lines.append(settled)
         contradicted = int(summary.get("contradicted", 0))
-        lines.append(
-            f"Filings contradicted by the sealed episode record: {contradicted}."
-        )
+        lines.append(f"Filings contradicted by the sealed episode record: {contradicted}.")
         if redeem and contradicted:
             unredeemed = unredeemed_contradictions(summary)
             lines.append(

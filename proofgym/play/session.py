@@ -31,8 +31,8 @@ from typing import Any
 from proofgym.catalog import WorldBundle, load_bundle
 from proofgym.core.runner import GATE_ENFORCE, EnforceRunner
 from proofgym.core.types import ENGINE_VERSION, Action, GateFeedback, Trace, TraceStep
-from proofgym.play.debrief import DEBRIEF_NAME, render_debrief_markdown
 from proofgym.play import duo_shape_a
+from proofgym.play.debrief import DEBRIEF_NAME, render_debrief_markdown
 from proofgym.z3check.checker import Z3Checker
 
 TASK_NAME = "TASK.md"
@@ -249,9 +249,20 @@ class PlaySession:
         private_dir = private_dir_for(workspace)
         workspace.mkdir(parents=True, exist_ok=True)
         private_dir.mkdir(parents=True, exist_ok=True)
-        if coactor_script is not None or mo1_arm is not None or live_actor is not None:
+        shape_a_requested = any(
+            value is not None for value in (coactor_script, mo1_arm, live_actor)
+        )
+        if world_name == "museum_duo" and not shape_a_requested:
+            raise ValueError(
+                "museum_duo sessions require Shape A: provide mo1_arm, live_actor, "
+                "and coactor_script together"
+            )
+        if shape_a_requested:
             if world_name != "museum_duo":
-                raise ValueError("Shape A flags (--mo1-arm/--live-actor/--coactor-script) require --world museum_duo")
+                raise ValueError(
+                    "Shape A flags (--mo1-arm/--live-actor/--coactor-script) "
+                    "require --world museum_duo"
+                )
             if coactor_script is None or mo1_arm is None or live_actor is None:
                 raise ValueError(
                     "Shape A requires --mo1-arm, --live-actor, and --coactor-script together"
@@ -628,9 +639,7 @@ class PlaySession:
         expected_episode = {
             key: value for key, value in episode.items() if key != "integrity_events"
         }
-        events.extend(
-            _diff_json_mirror(self.workspace / EPISODE_NAME, expected_episode, step=step)
-        )
+        events.extend(_diff_json_mirror(self.workspace / EPISODE_NAME, expected_episode, step=step))
         expected_state = _read_json(self.private_dir / STATE_NAME)
         events.extend(_diff_json_mirror(self.workspace / STATE_NAME, expected_state, step=step))
 

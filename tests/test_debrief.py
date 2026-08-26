@@ -328,11 +328,7 @@ def test_mock_debrief_is_deterministic(tmp_path: Path) -> None:
         debrief=True,
         debrief_policy="deny_all",
     )
-    first = run_episode(
-        **kwargs, out_dir=tmp_path / "a-out", live_root=tmp_path / "a-live"
-    )
-    second = run_episode(
-        **kwargs, out_dir=tmp_path / "b-out", live_root=tmp_path / "b-live"
-    )
+    first = run_episode(**kwargs, out_dir=tmp_path / "a-out", live_root=tmp_path / "a-live")
+    second = run_episode(**kwargs, out_dir=tmp_path / "b-out", live_root=tmp_path / "b-live")
     assert first.disclosure is not None and second.disclosure is not None
     assert first.disclosure.to_dict() == second.disclosure.to_dict()

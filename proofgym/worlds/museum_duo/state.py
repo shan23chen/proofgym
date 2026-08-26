@@ -122,8 +122,7 @@ def view(state: State) -> MuseumDuoSnapshot:
     return MuseumDuoSnapshot(
         agent_rooms={str(key): str(value) for key, value in agent_rooms.items()},
         carrying={
-            str(actor): frozenset(str(item) for item in items)
-            for actor, items in carrying.items()
+            str(actor): frozenset(str(item) for item in items) for actor, items in carrying.items()
         },
         active=str(active),
         object_rooms={str(key): str(value) for key, value in object_rooms.items()},

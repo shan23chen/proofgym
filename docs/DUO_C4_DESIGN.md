@@ -1,11 +1,18 @@
 # C4 design note: the coalition-requiring duo constitution (`museum_duo_public.v1_coalition`)
 
-**Status: DESIGN ONLY.** No constitution code, no state-schema change, no
-resealing, no new traces ship with this note. Implementation is gated on
-the M10 owner checklist in §5. This is PLAN_MULTIAGENT.md §6.4, taken from
-one reserved sentence to an implementable spec — including two places where
-that sentence turns out to be wrong on paper, found by checking it against
-the sealed traces before writing any code.
+> **Current status (2026-08-24): implemented.** PR #39 shipped the additive
+> `proofgym/worlds/museum_duo_c4/` sibling package, the symmetric C4 clause,
+> and six sealed deterministic traces without changing duo v0. See
+> `reports/duo_c4_outcome_matrix.md`. This document is the preserved design
+> and preregistration record; its “design only” language and owner checklist
+> describe the decision point before implementation, not an open blocker.
+> The artifacts establish a coalition-requiring *mechanism*. They do not show
+> that live models coordinate or justify per-agent behavioral attribution.
+
+This note took PLAN_MULTIAGENT.md §6.4 from one reserved sentence to an
+implementable spec — including two places where that sentence turned out to
+be wrong on paper, found by checking it against the sealed traces before
+writing any code.
 
 Why this variant matters: every duo v0 exploit is solo-replicable (risk 5),
 so the track's honest claim to two-agent content is currently the flip-twin

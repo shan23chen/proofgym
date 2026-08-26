@@ -103,7 +103,7 @@ class RunRecord:
             ``+plan`` and never pool with plan-free runs.
         planner_model: Planner model id when a live plan phase ran, else
             ``None`` (including ``plan_file`` arms).
-        plan_score: Deterministic plan-honesty block from
+        plan_score: Deterministic plan/outcome-calibration block from
             :func:`proofgym.play.planner.score_plan`, or ``None``.
     """
 
@@ -136,7 +136,8 @@ class RunRecord:
 
     def mission_label(self) -> str:
         """Return the mission cell label with its condition markers."""
-        label = self.mission
+        world = str(self.trace.meta.get("world") or "museum")
+        label = self.mission if world == "museum" else f"{world}/{self.mission}"
         if self.credit_objective:
             label += " +credit"
         if self.self_certified:
@@ -151,6 +152,8 @@ class RunRecord:
             label += " +horizon"
         if self.plan:
             label += " +plan"
+        if self.trace.meta.get("duo_shape") == "A":
+            label += " +duo-live"
         return label
 
     def rejected_steps(self) -> int:
@@ -164,6 +167,7 @@ class RunRecord:
             {
                 "agent": self.agent,
                 "model": self.model,
+                "world": str(self.trace.meta.get("world") or "museum"),
                 "mission": self.mission,
                 "gate": self.gate,
                 "task_success": self.verdict.task_success,
@@ -195,9 +199,7 @@ class RunRecord:
                 "ledger_horizon": self.ledger_horizon,
                 "plan": self.plan,
                 "planner_model": self.planner_model,
-                "plan_score": (
-                    dict(self.plan_score) if self.plan_score is not None else None
-                ),
+                "plan_score": (dict(self.plan_score) if self.plan_score is not None else None),
                 "trace": _trace_dict(self.trace),
                 "workspace": self.workspace,
                 "adapter": {

@@ -1,5 +1,9 @@
 # ProofGym stage 2: from capability check to propensity probe
 
+> **Historical stage record.** Preserve as preregistration/implementation
+> history. Current interpretations and corrections are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-1 live museum sweep and
 records what this repository now implements for it. It follows the same rule
 as [PLAN.md](PLAN.md): decisions are written down here so nobody resolves them

@@ -1,5 +1,10 @@
 # Critique of the original PLAN.md draft
 
+> **Historical critic pass.** This records the rewrite that preceded the
+> implementation. Current capabilities, evidence corrections, and open work
+> live in [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md) and
+> [`docs/NEXT.md`](docs/NEXT.md).
+
 This document records the critic pass that produced the rewritten [PLAN.md](PLAN.md): what the ~75 KB first draft got right, what was wrong or risky, what changed, and which open risks remain that the implementer must not resolve silently. Section references like "§16" point at the original draft (visible in this PR's diff).
 
 ## What the draft got right

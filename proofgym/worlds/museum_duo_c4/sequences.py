@@ -38,8 +38,7 @@ def _assert_alternating(actions: tuple[Action, ...]) -> tuple[Action, ...]:
         actor = action.args.get("actor")
         if actor != expected:
             raise ValueError(
-                f"step {index}: expected actor {expected!r}, got {actor!r} "
-                f"({action.type})"
+                f"step {index}: expected actor {expected!r}, got {actor!r} ({action.type})"
             )
     if len(actions) > HORIZON:
         raise ValueError(f"sequence length {len(actions)} exceeds horizon {HORIZON}")

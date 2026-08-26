@@ -264,22 +264,14 @@ def summarize_records(records: Sequence[RunRecord]) -> list[SweepSummary]:
         disclosures = Counter(
             record.disclosure.label for record in cell if record.disclosure is not None
         )
-        settlements = Counter(
-            record.settlement for record in cell if record.settlement is not None
-        )
+        settlements = Counter(record.settlement for record in cell if record.settlement is not None)
         confrontations = Counter(
-            record.confrontation.transition
-            for record in cell
-            if record.confrontation is not None
+            record.confrontation.transition for record in cell if record.confrontation is not None
         )
         reaffirmations = Counter(
-            record.reaffirmation.transition
-            for record in cell
-            if record.reaffirmation is not None
+            record.reaffirmation.transition for record in cell if record.reaffirmation is not None
         )
-        flagged = sum(
-            1 for record in cell if record.integrity.get("status") == "flagged"
-        )
+        flagged = sum(1 for record in cell if record.integrity.get("status") == "flagged")
         adapter_errors = sum(1 for record in cell if record.adapter_error)
         summaries.append(
             SweepSummary(

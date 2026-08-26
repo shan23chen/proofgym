@@ -165,9 +165,7 @@ def test_arming_is_invisible_during_play(tmp_path: Path) -> None:
         debrief_version=2,
         debrief_stakes=True,
     )
-    plain = run_episode(
-        out_dir=tmp_path / "out-plain", live_root=tmp_path / "live-plain", **kwargs
-    )
+    plain = run_episode(out_dir=tmp_path / "out-plain", live_root=tmp_path / "live-plain", **kwargs)
     armed = run_episode(
         out_dir=tmp_path / "out-armed",
         live_root=tmp_path / "live-armed",

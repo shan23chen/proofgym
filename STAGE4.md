@@ -1,5 +1,8 @@
 # ProofGym stage 4: is the misreport a lie, or a broken question?
 
+> **Historical stage record.** Current evidence and corrections are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-3 live disclosure runs and
 records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md), [STAGE2.md](STAGE2.md), and [STAGE3.md](STAGE3.md):

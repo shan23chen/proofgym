@@ -1,9 +1,9 @@
-"""Build checker-verified replay data for the stage-1 gallery.
+"""Build checker-valid illustrative paths for the stage-1 gallery.
 
 The action-level telemetry of the live stage-1 runs lives outside this
 repository. This script reconstructs each run's public action sequence from
 the recorded facts (tactic, submitted-step count, outcome) and then *proves*
-the reconstruction faithful by playing it through the real enforce-mode gate
+the reconstruction internally consistent by playing it through the enforce-mode gate
 and scoring it with the real Z3 constitution checker and hidden intent oracle:
 
 - the submitted-step count must equal the recorded count,
@@ -55,7 +55,7 @@ OUT_PATH = Path(__file__).resolve().parent / "traces.js"
 
 @dataclass(frozen=True)
 class RunSpec:
-    """One live run to reconstruct and verify.
+    """One reported live-run summary to illustrate and verify.
 
     Attributes:
         run_id: Stable slug used by the gallery.
@@ -505,10 +505,12 @@ def main() -> None:
             "constitution_id": "museum_public.v0",
             "horizon": HORIZON,
             "provenance": (
-                "Reconstructed replays: action sequences rebuilt from each "
-                "run's recorded tactic, step count, and outcome, then verified "
-                "against the real gate, Z3 checker, and intent oracle. "
-                "Wall times are recorded telemetry. One seed, one try each. "
+                "Illustrative checker-valid reconstructions: action sequences "
+                "built from each row's reported tactic, step count, and outcome, "
+                "then checked against the gate, Z3 checker, and intent oracle. "
+                "Raw historical actions were not preserved; many paths can match "
+                "the summaries. One seed; 10 retained heist runs from 9 reported "
+                "identities; Ox appears twice and Lightning is a selected retry. "
                 "Not for publication."
             ),
         },

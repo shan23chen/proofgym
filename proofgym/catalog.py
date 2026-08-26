@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from proofgym.core.protocols import Clause, IntentOracle, World
 from proofgym.core.types import Instance, State
-from proofgym.play.debrief import DebriefProvider
 from proofgym.worlds.museum.constitution import constitution_for_instance
 from proofgym.worlds.museum.debrief import MuseumDebrief
 from proofgym.worlds.museum.instances import instance_for_mission
@@ -24,9 +23,16 @@ from proofgym.worlds.museum_duo.intent import MuseumDuoIntentOracle
 from proofgym.worlds.museum_duo.physics import MuseumDuoWorld
 from proofgym.worlds.museum_duo.public import (
     observe as duo_observe,
+)
+from proofgym.worlds.museum_duo.public import (
     state_from_observation as duo_state_from_observation,
+)
+from proofgym.worlds.museum_duo.public import (
     task_markdown as duo_task_markdown,
 )
+
+if TYPE_CHECKING:
+    from proofgym.play.debrief import DebriefProvider
 
 
 class PublicManual(Protocol):

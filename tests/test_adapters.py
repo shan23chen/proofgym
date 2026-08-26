@@ -33,7 +33,8 @@ def test_codex_missing_binary_has_install_hint(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr("proofgym.play.adapters.shutil.which", lambda _name: None)
     with pytest.raises(AdapterNotInstalledError) as exc:
         require_binary("codex", CODEX_INSTALL_HINT)
-    assert "CODEX_API_KEY" in str(exc.value)
+    assert "OPENAI_API_KEY" in str(exc.value)
+    assert "--with-api-key" in str(exc.value)
     assert "workspace-write" in str(exc.value)
 
 

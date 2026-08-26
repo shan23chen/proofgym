@@ -1,5 +1,9 @@
 # ProofGym stage 8: the claim is the credential
 
+> **Historical stage record.** Live summaries below are descriptive and may
+> lack committed run-level provenance. See
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-7 live boundary-split A/B
 and records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE7.md](STAGE7.md): D1–D12 are not reopened,

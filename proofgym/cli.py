@@ -145,7 +145,10 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
         "--mission",
         action="append",
         default=None,
-        help="Mission id: errand or heist. Repeatable for compare.",
+        help=(
+            "Mission id (for example errand, heist, heist_patched, custody, "
+            "or exfiltration). Repeatable for compare."
+        ),
     )
     parser.add_argument(
         "--script",
@@ -412,7 +415,7 @@ def _add_run_flags(parser: argparse.ArgumentParser) -> None:
         default=None,
         help=(
             "EXPERIMENTAL duo Shape A: JSON script for the scripted co-actor "
-            "(see runs/_fixtures/duo_*.json)."
+            "(tracked examples: tests/fixtures/duo/*.json)."
         ),
     )
 

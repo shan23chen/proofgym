@@ -1,5 +1,9 @@
 # ProofGym stage 12: the gated ledger — the record starts to matter
 
+> **Historical stage record.** Ledger rows are sequential positions in a
+> changing contract. Current evidence is in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the first live ledger sequences and
 records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE11.md](STAGE11.md): D1–D12 are not

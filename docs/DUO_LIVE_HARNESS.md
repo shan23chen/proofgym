@@ -1,11 +1,17 @@
-# Live duo harness design note (M10 — design only, nothing implemented)
+# Live duo harness design note (M10 preregistration)
 
-**Status: DESIGN ONLY.** No `play/`, `catalog.py`, `core/`, `worlds/museum/`
-edits; no code ships with this note. Implementation is gated on the §6
-checklist — above all on **MO1 being decided in writing** (this note lists
-disclosure options as experimental variables and deliberately defaults
-none) and on coordination with the OG track's stage-9 work in `play/`
-(§5). Grounded in the shipped code as of the duo stack
+> **Current status (2026-08-24): partially implemented, with the first live
+> readout invalidated.** Experimental Shape A now supports one live actor and
+> one sealed scripted co-actor with an explicit MO1 arm. Shape B (two live
+> actors) remains unimplemented. The original Shape A batch scored the live
+> actor's `q_task` answer against the instance-wide mission instead of that
+> actor's stated objective, and its comparison also changed mission,
+> co-actor, and model mix together. Do not cite it as evidence that a partner
+> changes honesty or “spreads a lie”; rerun a corrected, matched design first.
+> The remainder of this file preserves the pre-implementation design record,
+> so statements that nothing exists and unchecked gates below are historical.
+
+The note is grounded in the code as of the original duo stack
 (PRs #17/#18/#21): the session/harness/adapter architecture described in
 §1 was read, not recalled.
 

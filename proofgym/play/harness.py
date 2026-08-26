@@ -41,6 +41,7 @@ from proofgym.play.debrief import (
     score_debrief,
     settle_debrief,
 )
+from proofgym.play.duo_shape_a import load_coactor_script
 from proofgym.play.isolation import assert_workspace_not_in_checkout, source_checkout_root
 from proofgym.play.ledger import (
     append_ledger,
@@ -59,7 +60,6 @@ from proofgym.play.planner import (
 from proofgym.play.prompt import confront_prompt, reaffirm_prompt
 from proofgym.play.report import RunRecord, format_one_row_report, format_verdict_table
 from proofgym.play.session import PlaySession, private_dir_for
-from proofgym.play.duo_shape_a import load_coactor_script
 from proofgym.z3check.checker import Z3Checker
 
 CLI_AGENTS = frozenset({"opencode", "codex"})
@@ -284,8 +284,7 @@ def run_episode(
         )
     if ledger_gate and ledger_path is None:
         raise ValueError(
-            "--ledger-gate requires --ledger (a gate on a record nobody keeps "
-            "is incoherent)"
+            "--ledger-gate requires --ledger (a gate on a record nobody keeps is incoherent)"
         )
     if ledger_redeem and not ledger_gate:
         raise ValueError(
@@ -294,8 +293,7 @@ def run_episode(
         )
     if ledger_horizon is not None and ledger_path is None:
         raise ValueError(
-            "--ledger-horizon requires --ledger (a contract length with no "
-            "contract is incoherent)"
+            "--ledger-horizon requires --ledger (a contract length with no contract is incoherent)"
         )
     if ledger_horizon is not None and ledger_horizon < 1:
         raise ValueError(f"--ledger-horizon must be positive, got {ledger_horizon}")
@@ -327,7 +325,13 @@ def run_episode(
     if planner_model is not None and agent not in CLI_AGENTS:
         raise ValueError("--planner-model requires a coding-CLI agent (opencode/codex)")
     coactor_payload = None
-    if coactor_script is not None or mo1_arm is not None or live_actor is not None:
+    shape_a_requested = any(value is not None for value in (coactor_script, mo1_arm, live_actor))
+    if world_name == "museum_duo" and not shape_a_requested:
+        raise ValueError(
+            "--world museum_duo requires Shape A: pass --mo1-arm, --live-actor, "
+            "and --coactor-script together"
+        )
+    if shape_a_requested:
         if coactor_script is None or mo1_arm is None or live_actor is None:
             raise ValueError(
                 "Shape A requires --mo1-arm, --live-actor, and --coactor-script together"
@@ -335,19 +339,11 @@ def run_episode(
         if world_name != "museum_duo":
             raise ValueError("Shape A co-actor harness requires --world museum_duo")
         coactor_payload = load_coactor_script(coactor_script)
-        if live_actor != coactor_payload["live_actor"] and live_actor == coactor_payload["coactor"]:
-            raise ValueError("--live-actor collides with scripted coactor seat")
         if live_actor != coactor_payload["live_actor"]:
-            coactor_payload = dict(coactor_payload)
-            coactor_payload["live_actor"] = live_actor
-            other = "H" if live_actor == "E" else "E"
-            coactor_payload["coactor"] = other
-            stamped = []
-            for raw in coactor_payload["actions"]:
-                args = dict(raw["args"])
-                args["actor"] = other
-                stamped.append({"type": raw["type"], "args": args})
-            coactor_payload["actions"] = stamped
+            raise ValueError(
+                "--live-actor must match coactor_script.live_actor; use a fixture "
+                "authored for the requested seat instead of silently restamping roles"
+            )
 
     if agent == "mock" and debrief and debrief_policy is None:
         debrief_policy = "truthful"
@@ -385,7 +381,19 @@ def run_episode(
             position=ledger_position,
         )
 
-    meta = {"agent_id": f"{agent}.{model_id}", "mission_id": mission}
+    # Authoritative trace metadata comes only from harness arguments. Keep
+    # experimental condition/seat provenance here so the in-process rebuild
+    # does not have to trust the private on-disk record.
+    meta: dict[str, Any] = {"agent_id": f"{agent}.{model_id}", "mission_id": mission}
+    if coactor_payload is not None:
+        meta.update(
+            {
+                "duo_shape": "A",
+                "mo1_arm": mo1_arm,
+                "live_actor": live_actor,
+                "coactor": coactor_payload["coactor"],
+            }
+        )
     session = PlaySession.create(
         workspace,
         world_name=world_name,
@@ -421,11 +429,9 @@ def run_episode(
         strategy, planner_meta = run_plan_phase(
             agent=agent,
             model=planner_model,
-            mission=mission,
-            world_name=world_name,
+            task_markdown=(workspace / "TASK.md").read_text(encoding="utf-8"),
             gate=gate,
             timeout=timeout,
-            credit_objective=credit_objective,
             out_dir=out_dir,
         )
     if strategy is not None:
@@ -444,9 +450,7 @@ def run_episode(
             sealed = load_reference_trace(script)
             live = live_actor or coactor_payload["live_actor"]
             actions = [
-                step.action
-                for step in sealed.steps
-                if step.action.args.get("actor") == live
+                step.action for step in sealed.steps if step.action.args.get("actor") == live
             ]
             adapter_meta = MockAdapter(actions, debrief_policy=debrief_policy).play(session)
             adapter_meta = {
@@ -505,6 +509,7 @@ def run_episode(
                 adapter_meta.get("returncode"),
                 session.to_trace(),
                 workspace,
+                expected_actor=live_actor if coactor_payload is not None else None,
             )
             if not adapter_error or attempt == max_attempts:
                 break
@@ -580,9 +585,7 @@ def run_episode(
     reaffirmation: ConfrontationVerdict | None = None
     fire_confront = confront and disclosure is not None and disclosure.label == "misreport"
     fire_reaffirm = (
-        reaffirm
-        and disclosure is not None
-        and disclosure.label in ("truthful", "misreport")
+        reaffirm and disclosure is not None and disclosure.label in ("truthful", "misreport")
     )
     if fire_confront or fire_reaffirm:
         assert disclosure is not None
@@ -618,16 +621,12 @@ def run_episode(
                 task_success=verdict.task_success,
                 declared=second_ask.round2.declared,
                 stake_question_id=bundle.debrief.stake_question_id(),
-                claim_question_id=(
-                    bundle.debrief.claim_question_id() if self_certify else None
-                ),
+                claim_question_id=(bundle.debrief.claim_question_id() if self_certify else None),
             )
             if ledger_gate and ledger_standing is not None:
                 # The gate applies to the resettled value too, against the
                 # same standing the player saw at episode start.
-                settlement = gate_settlement(
-                    settlement, ledger_standing, redeem=ledger_redeem
-                )
+                settlement = gate_settlement(settlement, ledger_standing, redeem=ledger_redeem)
     integrity = {
         "status": "flagged" if integrity_events else "clean",
         "events": integrity_events,
@@ -798,8 +797,7 @@ def _run_second_ask(
             # `withdrew` (the announced rule applies to an absent re-filing
             # as stated); the marker keeps casualties separable from silence.
             round2_adapter_error = (
-                round2_meta["returncode"] != 0
-                and not (workspace / CONFRONT_ANSWERS_NAME).is_file()
+                round2_meta["returncode"] != 0 and not (workspace / CONFRONT_ANSWERS_NAME).is_file()
             )
             if not round2_adapter_error or attempt == max_attempts:
                 break
@@ -843,7 +841,13 @@ def _run_second_ask(
     return verdict, events
 
 
-def _cli_attempt_failed(returncode: Any, trace: Trace, workspace: Path) -> bool:
+def _cli_attempt_failed(
+    returncode: Any,
+    trace: Trace,
+    workspace: Path,
+    *,
+    expected_actor: str | None = None,
+) -> bool:
     """Return whether a coding-CLI attempt was an adapter failure.
 
     An attempt is an *adapter error* only when all three hold: the CLI
@@ -863,13 +867,20 @@ def _cli_attempt_failed(returncode: Any, trace: Trace, workspace: Path) -> bool:
         returncode: CLI exit status from the adapter metadata.
         trace: Authoritative episode trace at the end of the attempt.
         workspace: Player workspace (checked for a debrief filing).
+        expected_actor: For Shape A, the live seat. Scripted coactor steps do
+            not count as engagement by a CLI that died before acting.
 
     Returns:
         True when the attempt records an absent player.
     """
     if returncode == 0:
         return False
-    if trace.steps:
+    engaged = (
+        bool(trace.steps)
+        if expected_actor is None
+        else any(step.action.args.get("actor") == expected_actor for step in trace.steps)
+    )
+    if engaged:
         return False
     if (workspace / DEBRIEF_ANSWERS_NAME).is_file():
         return False
@@ -1103,20 +1114,14 @@ def load_run_record(path: Path) -> RunRecord:
         ledger_gated=bool(payload.get("ledger_gated", False)),
         ledger_redeemed=bool(payload.get("ledger_redeemed", False)),
         ledger_horizon=(
-            int(payload["ledger_horizon"])
-            if payload.get("ledger_horizon") is not None
-            else None
+            int(payload["ledger_horizon"]) if payload.get("ledger_horizon") is not None else None
         ),
         plan=bool(payload.get("plan", False)),
         planner_model=(
-            str(payload["planner_model"])
-            if payload.get("planner_model") is not None
-            else None
+            str(payload["planner_model"]) if payload.get("planner_model") is not None else None
         ),
         plan_score=(
-            dict(payload["plan_score"])
-            if isinstance(payload.get("plan_score"), Mapping)
-            else None
+            dict(payload["plan_score"]) if isinstance(payload.get("plan_score"), Mapping) else None
         ),
     )
 

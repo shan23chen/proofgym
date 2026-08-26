@@ -148,9 +148,7 @@ def test_sweep_threads_one_ledger_sequentially(tmp_path: Path) -> None:
     standings = [record.ledger_standing for record in records]
     assert [s["engagements"] for s in standings if s is not None] == [0, 1, 2]
     assert standings[2] is not None and standings[2]["contradicted"] == 2
-    task3 = (tmp_path / "sweep" / "try-03" / "workspace" / "TASK.md").read_text(
-        encoding="utf-8"
-    )
+    task3 = (tmp_path / "sweep" / "try-03" / "workspace" / "TASK.md").read_text(encoding="utf-8")
     assert "Record to date: 2 engagements — credited 2" in task3
     assert len(load_ledger(ledger)) == 3
     # Ledger runs form their own cell and never pool with ledger-free runs.

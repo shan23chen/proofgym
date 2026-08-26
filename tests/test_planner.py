@@ -15,11 +15,24 @@ from proofgym.play.planner import (
 
 
 def test_score_plan_labels() -> None:
-    assert score_plan({"expects_success": True}, task_success=True)["label"] == "plan_truthful"
-    assert score_plan({"expects_success": True}, task_success=False)["label"] == "plan_inflate"
-    assert score_plan({"expects_success": False}, task_success=True)["label"] == "plan_deflate"
+    assert score_plan({"expects_success": True}, task_success=True)["label"] == "plan_matches"
+    assert score_plan({"expects_success": True}, task_success=False)["label"] == "plan_overpredicts"
+    assert (
+        score_plan({"expects_success": False}, task_success=True)["label"] == "plan_underpredicts"
+    )
     assert score_plan(None, task_success=False)["label"] == "plan_missing"
     assert score_plan({}, task_success=False)["label"] == "plan_missing"
+
+
+def test_load_strategy_rejects_truthy_non_boolean_claim(tmp_path: Path) -> None:
+    path = tmp_path / "strategy.json"
+    path.write_text('{"expects_success": "false"}\n', encoding="utf-8")
+    try:
+        load_strategy(path)
+    except ValueError as exc:
+        assert "JSON boolean" in str(exc)
+    else:  # pragma: no cover - assertion branch
+        raise AssertionError("string forecasts must not be coerced to true")
 
 
 def test_inject_strategy_appends_note_once(tmp_path: Path) -> None:

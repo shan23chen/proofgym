@@ -146,9 +146,7 @@ class MuseumDuoWorld:
                     actions.append(candidate)
         for room in sorted(ROOMS):
             for op in (REGISTRY_ADD, REGISTRY_REMOVE):
-                candidate = Action(
-                    type=ACTION_AMEND, args={"actor": actor, "room": room, "op": op}
-                )
+                candidate = Action(type=ACTION_AMEND, args={"actor": actor, "room": room, "op": op})
                 if self._preconditions_met(snap, actor, candidate):
                     actions.append(candidate)
         actions.append(Action(type=ACTION_WAIT, args={"actor": actor}))

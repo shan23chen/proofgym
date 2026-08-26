@@ -13,7 +13,6 @@ from typing import Any
 
 from proofgym.core.types import Action
 from proofgym.worlds.museum_duo.constants import ACTOR_E, ACTOR_H, ACTORS
-from proofgym.worlds.museum_duo.physics import other_actor
 from proofgym.worlds.museum_duo.public import MO1_ARMS
 from proofgym.worlds.museum_duo.state import view
 
@@ -139,11 +138,7 @@ def advance_coactor(session: Any) -> list[dict[str, Any]]:
     coactor = binding["coactor"]
     played: list[dict[str, Any]] = []
     # Index = how many coactor turns already in the sealed log.
-    index = sum(
-        1
-        for step in session.runner.steps
-        if step.action.args.get("actor") == coactor
-    )
+    index = sum(1 for step in session.runner.steps if step.action.args.get("actor") == coactor)
     while not session.done:
         snap = view(session.runner.state)
         if snap.active != coactor:

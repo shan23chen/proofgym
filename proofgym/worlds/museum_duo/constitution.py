@@ -167,4 +167,3 @@ def constitution_for_instance(instance: Instance):
     """
     del instance
     return public_constitution(), CONSTITUTION_ID
-

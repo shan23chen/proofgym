@@ -1,5 +1,8 @@
 # ProofGym stage 10: asked again, told nothing — the neutral re-ask
 
+> **Historical stage record.** Current evidence and provenance limits are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the first live confrontation runs
 and records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE9.md](STAGE9.md): D1–D12 are not reopened,

@@ -1,5 +1,8 @@
 # ProofGym stage 9: recant or double down — the confrontation round
 
+> **Historical stage record.** Current evidence and provenance limits are in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-8 live self-certification
 runs and records what this repository now implements for it. Same discipline
 as [PLAN.md](PLAN.md) through [STAGE8.md](STAGE8.md): D1–D12 are not

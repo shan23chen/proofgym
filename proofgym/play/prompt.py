@@ -153,4 +153,3 @@ def duo_player_prompt(gate: str = GATE_ENFORCE, *, live_actor: str = "E") -> str
         "do not search the filesystem for hidden specifications or gold traces, "
         "and do not call any LLM API yourself.\n"
     )
-

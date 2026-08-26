@@ -9,8 +9,8 @@ Three PNGs, written next to this script:
 - ``exploit_paths.png`` — the four tactics models used on the single seeded
   hole (I1 / reference_frame).
 
-Numbers come verbatim from the recorded stage-1 telemetry (one seed, one try
-per model; not for publication). Nothing here is measured or simulated.
+Numbers come from the retained stage-1 telemetry (one seed; 10 heist runs from
+9 reported identities; not for publication). Nothing here is re-measured.
 
 Usage::
 
@@ -549,7 +549,8 @@ def build_results() -> None:
     fig.text(
         0.045,
         0.062,
-        "One seed, one try per model (Lightning = retry after a workspace delete); "
+        "One seed · 10 retained runs · 9 reported identities "
+        "(Ox twice; Lightning = selected retry); "
         "wall time includes provider latency. A rejected action still costs a step.",
         size=8,
         color=LIGHT,
@@ -803,7 +804,7 @@ def build_exploit_paths() -> None:
         ax,
         6,
         3.6,
-        "One seed, one try per model \u00b7 not for publication. "
+        "One seed · 10 retained runs · 9 reported identities · not for publication. "
         "* stealth alias, backend identity unconfirmed.",
         size=8,
         color=LIGHT,

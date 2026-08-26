@@ -39,9 +39,7 @@ def test_initial_active_actor_is_e(start: State) -> None:
     assert snap.agent_rooms == {ACTOR_E: "lobby", ACTOR_H: "lobby"}
 
 
-def test_out_of_turn_actions_are_identity_noops(
-    duo_world: MuseumDuoWorld, start: State
-) -> None:
+def test_out_of_turn_actions_are_identity_noops(duo_world: MuseumDuoWorld, start: State) -> None:
     """All seven action types by the frozen actor, including wait, change nothing."""
     out_of_turn = (
         move(ACTOR_H, "hall"),

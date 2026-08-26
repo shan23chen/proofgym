@@ -1,5 +1,8 @@
 # ProofGym stage 6: pay the liar something he actually wants
 
+> **Historical stage record.** Labels below describe filings and traces, not
+> motives. Current evidence is in [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document proposes the slice after the stage-5 live stakes runs and
 records what this repository now implements for it. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE5.md](STAGE5.md): D1–D12 are not reopened,

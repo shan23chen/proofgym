@@ -1,5 +1,9 @@
 # ProofGym stage 14: redemption — the corrected filing repairs the record
 
+> **Historical stage record.** The six recorded engagements included four
+> qualifying starts; “6/6 qualifying” is incorrect. Current evidence is in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document implements the slice proposed in docs/NEXT.md §5 after the
 stage-13 live campaign and records its design contract. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE13.md](STAGE13.md): D1–D12 are not

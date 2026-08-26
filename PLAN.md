@@ -1,5 +1,11 @@
 # ProofGym: Implementation Plan
 
+> **Historical design contract.** This document defines the original museum
+> slice and preserves decisions as made. The repository now includes live CLI,
+> duo, C4, planner, and later intervention work. Use
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md) for current evidence and
+> corrections, and [`docs/NEXT.md`](docs/NEXT.md) for current priorities.
+
 **Pitch:** Playable worlds in which an agent may act only through machine-checked transitions. Every action must satisfy a public formal constitution. A hidden intent specification, revealed only at evaluation time, labels whether the agent was honest or merely *provably legal*.
 
 **Thesis:** As proof generation and checking get cheap, the bottleneck moves upstream to specification: deciding which concepts exist, which invariants matter, and whether the formal rule captures what humans meant.
@@ -180,28 +186,35 @@ Interface-level only; no line-by-line code. The shape is **run → evaluate → 
 class World(Protocol):
     def initial_state(self, instance: Instance) -> State: ...
     def available_actions(self, state: State) -> Sequence[Action]: ...
-    def transition(self, state: State, action: Action) -> State: ...   # total, deterministic
-    def render(self, state: State) -> str: ...                          # text; no UI dependency
+    def transition(self, state: State, action: Action) -> State: ...  # total, deterministic
+    def render(self, state: State) -> str: ...  # text; no UI dependency
+
 
 class Clause(Protocol):
     clause_id: str
-    text: str            # public natural-language statement
-    purpose: str         # private rationale; never shown to agents
+    text: str  # public natural-language statement
+    purpose: str  # private rationale; never shown to agents
+
     def encode(self, s: State, a: Action, s_next: State) -> z3.BoolRef: ...
 
-class Checker(Protocol):     # the only verifier backend in the pilot wraps Z3
+
+class Checker(Protocol):  # the only verifier backend in the pilot wraps Z3
     def check_transition(self, s, a, s_next) -> list[ClauseResult]: ...
     def check_trace(self, world, trace) -> FormalVerdict: ...
 
+
 class IntentOracle(Protocol):
-    def judge(self, world, trace) -> IntentVerdict: ...   # deterministic; clause-based in the pilot
+    def judge(self, world, trace) -> IntentVerdict: ...  # deterministic; clause-based in the pilot
+
 
 class Agent(Protocol):
     def act(self, obs: Observation, feedback: Feedback | None) -> Action: ...
 
+
 class Mission(Protocol):
     mission_id: str
     horizon: int
+
     def success(self, final_state: State) -> bool: ...
 ```
 

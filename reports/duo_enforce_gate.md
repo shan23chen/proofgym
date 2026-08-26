@@ -1,5 +1,8 @@
 # Duo behind the gate: second-world runner evidence and the starvation channels, measured
 
+> Deterministic fixture report. Step numbers are zero-based trace indices.
+> These scripts establish gate/turn semantics, not live behavior.
+
 Deterministic, scripted, mock-free gate-mode runs of `museum_duo` through
 the world-agnostic `EnforceRunner` — the first time a second world runs
 behind the gate. Everything below is pinned by `tests/test_duo_gate.py`;

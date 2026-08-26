@@ -1,5 +1,16 @@
 # Duo track: ranked next bets (scout window)
 
+> **Current status (2026-08-24): archived scout log, not the active roadmap.**
+> Bet 1 shipped; Bet 2 subsequently shipped as the additive
+> `museum_duo_c4` sibling in PR #39; Bet 3 was partially realized as
+> experimental Shape A (one live actor plus one scripted co-actor). The first
+> Shape A live comparison is invalid evidence for partner effects because of
+> role/mission `q_task` scoring and simultaneous condition changes. Treat its
+> data as invalidated, not as a contagion result. The current priorities are
+> the corrected matched rerun, planner-calibration terminology, and committed
+> result provenance in `docs/NEXT.md`. The ranked bets below are preserved as
+> the original scout-window decision record.
+
 Scope discipline for every bet below: duo files only — no edits to
 `worlds/museum/`, the stage 2–8 ladder, `core/`, `z3check/`, or the sealed
 museum artifacts; D1–D12 and M1–M10 stay closed; no LLM judge; no free-text

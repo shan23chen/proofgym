@@ -1,5 +1,16 @@
 # ProofGym Duo: two-agent museum — plan and critique
 
+> **Current status (2026-08-24): historical preregistration, substantially
+> implemented.** Duo v0, its enforce-gate probes, and the additive
+> `museum_duo_c4` sibling are now shipped with deterministic artifacts; an
+> experimental one-live/one-scripted Shape A harness also exists. The scope,
+> “design only,” and deferred-language below record what was decided before
+> those slices landed. C4 validates a coalition-requiring mechanism, not live
+> coordination. The first Shape A live batch is invalid evidence for partner
+> effects because `q_task` used the instance mission instead of the live
+> role's objective and the compared arms were confounded. See
+> `docs/NEXT.md` for the corrected rerun and provenance priorities.
+
 **Track:** research scout, orthogonal to the single-agent (OG) museum pilot. This document
 plans `museum_duo`, a two-agent variant of the museum world; it deliberately probes the
 `institutional/multi-agent` row of the exploit taxonomy (PLAN.md §9) and L6 of the difficulty
@@ -15,9 +26,9 @@ Concretely: no containers, no aliasing mechanics, no constitution patches, no ed
 below inherits them; the status table in §3.2 records how each applies to the duo world.
 CRITIQUE.md's eight standing risks also carry over unchanged.
 
-**Deliverable of this document:** the plan (§1–§10) and its critique (§11). No live model
-runs, no changes to single-agent heist missions. Implementation, when it starts, ships a new
-sibling world plus scripted traces and tests — nothing else.
+**Historical deliverable of this document:** the plan (§1–§10) and its critique (§11). At
+the time of writing it included no live model runs or changes to single-agent heist missions.
+Later implementation status is summarized in the banner above.
 
 ---
 

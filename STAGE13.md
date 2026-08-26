@@ -1,5 +1,9 @@
 # ProofGym stage 13: the announced contract horizon — engagement k of K
 
+> **Historical stage record.** Report `k/K` and starting standing for every
+> row; these are not iid trials. Current evidence is in
+> [`docs/STAGE_REPORT.md`](docs/STAGE_REPORT.md).
+
 This document implements the slice proposed in docs/NEXT.md §4 after the
 stage-12 live campaign and records its design contract. Same discipline as
 [PLAN.md](PLAN.md) through [STAGE12.md](STAGE12.md): D1–D12 are not
